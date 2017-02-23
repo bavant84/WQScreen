@@ -1,0 +1,77 @@
+Designated_Use	ScreenType	Region	Sample_Type	variable	value	maSlope	mbIntercept	alphaBeta	conversionFactor	alpha	beta
+Aquatic Acute	Aquatic Acute	Colorado	Total	Aluminum	NA	1.3695	1.8308	0	1		
+Aquatic Acute	Aquatic Acute	Colorado	Dissolved	Cadmium	NA	0.9151	-3.1485	1		1.136672	0.041838
+Aquatic Acute	Trout Acute	Colorado	Dissolved	Cadmium	NA	0.9151	-3.6236	1		1.136672	0.041838
+Aquatic Acute	Aquatic Acute	Colorado	Dissolved	Chromium	NA	0.819	2.5736	0	1		
+Aquatic Acute	Aquatic Acute	Colorado	Dissolved	Copper	NA	0.9422	-1.7408	0	1		
+Aquatic Acute	Aquatic Acute	Colorado	Dissolved	Lead	NA	1.273	-1.46	1		1.46203	0.145712
+Aquatic Acute	Aquatic Acute	Colorado	Dissolved	Manganese	NA	0.3331	6.4676	0	1		
+Aquatic Acute	Aquatic Acute	Colorado	Dissolved	Nickel	NA	0.846	2.253	0	1		
+Aquatic Acute	Aquatic Acute	Colorado	Dissolved	Silver	NA	1.72	-6.52	0	0.5		
+Aquatic Acute	Aquatic Acute	Colorado	Dissolved	Zinc	NA	0.9094	0.9095	0	0.978		
+Aquatic Chronic	Aquatic Chronic	Colorado	Total	Aluminum	NA	1.3695	-0.1158	0	1		
+Aquatic Chronic	Aquatic Chronic	Colorado	Dissolved	Cadmium	NA	0.7998	-4.4451	1		1.101672	0.041838
+Aquatic Chronic	Aquatic Chronic	Colorado	Dissolved	Chromium	NA	0.819	0.534	0	1		
+Aquatic Chronic	Aquatic Chronic	Colorado	Dissolved	Copper	NA	0.8545	-1.7428	0	1		
+Aquatic Chronic	Aquatic Chronic	Colorado	Dissolved	Lead	NA	1.273	-4.705	1		1.46203	0.145712
+Aquatic Chronic	Aquatic Chronic	Colorado	Dissolved	Manganese	NA	0.3331	5.8743	0	1		
+Aquatic Chronic	Aquatic Chronic	Colorado	Dissolved	Nickel	NA	0.846	0.0554	0	1		
+Aquatic Chronic	Trout Chronic	Colorado	Dissolved	Silver	NA	1.72	-10.51	0	1		
+Aquatic Chronic	Aquatic Chronic	Colorado	Dissolved	Zinc	NA	0.9094	0.6235	0	0.986		
+Aquatic Acute	Aquatic Acute	New Mexico	Total	Aluminum	NA	1.3695	1.8308	0	1		
+Aquatic Acute	Aquatic Acute	New Mexico	Dissolved	Cadmium	NA	0.8968	-3.5699	1		1.136672	0.041838
+Aquatic Acute	Aquatic Acute	New Mexico	Dissolved	Chromium	NA	0.819	3.7256	0	0.316		
+Aquatic Acute	Aquatic Acute	New Mexico	Dissolved	Copper	NA	0.9422	-1.7	0	0.96		
+Aquatic Acute	Aquatic Acute	New Mexico	Dissolved	Lead	NA	1.273	-1.46	1		1.46203	0.145712
+Aquatic Acute	Aquatic Acute	New Mexico	Dissolved	Manganese	NA	0.3331	6.4676	0	1		
+Aquatic Acute	Aquatic Acute	New Mexico	Dissolved	Nickel	NA	0.846	2.255	0	0.998		
+Aquatic Acute	Aquatic Acute	New Mexico	Dissolved	Silver	NA	1.72	-6.59	0	0.85		
+Aquatic Acute	Aquatic Acute	New Mexico	Dissolved	Zinc	NA	0.9094	0.9095	0	0.978		
+Aquatic Chronic	Aquatic Chronic	New Mexico	Total	Aluminum	NA	1.3695	0.9161	0	1		
+Aquatic Chronic	Aquatic Chronic	New Mexico	Dissolved	Cadmium	NA	0.7647	-4.218	1		1.101672	0.041838
+Aquatic Chronic	Aquatic Chronic	New Mexico	Dissolved	Chromium	NA	0.819	0.6848	0	0.86		
+Aquatic Chronic	Aquatic Chronic	New Mexico	Dissolved	Copper	NA	0.8545	-1.702	0	0.96		
+Aquatic Chronic	Aquatic Chronic	New Mexico	Dissolved	Lead	NA	1.273	-4.705	1		1.46203	0.145712
+Aquatic Chronic	Aquatic Chronic	New Mexico	Dissolved	Manganese	NA	0.3331	5.8743	0	1		
+Aquatic Chronic	Aquatic Chronic	New Mexico	Dissolved	Nickel	NA	0.846	0.0584	0	0.997		
+Aquatic Chronic	Aquatic Chronic	New Mexico	Dissolved	Zinc	NA	0.9094	0.6235	0	0.986		
+Aquatic Acute	Aquatic Acute	Utah	Dissolved	Cadmium	NA	1.0166	-3.924	1		1.136672	0.041838
+Aquatic Acute	Aquatic Acute	Utah	Dissolved	Chromium	NA	0.819	3.7256	0	0.316		
+Aquatic Acute	Aquatic Acute	Utah	Dissolved	Copper	NA	0.9422	-1.7	0	0.96		
+Aquatic Acute	Aquatic Acute	Utah	Dissolved	Lead	NA	1.273	-1.46	1		1.46203	0.145712
+Aquatic Acute	Aquatic Acute	Utah	Dissolved	Nickel	NA	0.846	2.255	0	0.998		
+Aquatic Acute	Aquatic Acute	Utah	Dissolved	Silver	NA	1.72	-6.59	0	0.85		
+Aquatic Acute	Aquatic Acute	Utah	Dissolved	Zinc	NA	0.8473	0.884	0	0.978		
+Aquatic Chronic	Aquatic Chronic	Utah	Dissolved	Cadmium	NA	0.7409	-4.719	1		1.101672	0.041838
+Aquatic Chronic	Aquatic Chronic	Utah	Dissolved	Chromium	NA	0.819	0.6848	0	0.86		
+Aquatic Chronic	Aquatic Chronic	Utah	Dissolved	Copper	NA	0.8545	-1.702	0	0.96		
+Aquatic Chronic	Aquatic Chronic	Utah	Dissolved	Lead	NA	1.273	-4.705	1		1.46203	0.145712
+Aquatic Chronic	Aquatic Chronic	Utah	Dissolved	Nickel	NA	0.846	0.0584	0	0.997		
+Aquatic Chronic	Aquatic Chronic	Utah	Dissolved	Zinc	NA	0.8473	0.884	0	0.986		
+Aquatic Acute	Aquatic Acute	Navajo Nation	Dissolved	Cadmium	NA	1.0166	-3.924	1		1.136672	0.041838
+Aquatic Acute	Aquatic Acute	Navajo Nation	Dissolved	Chromium	NA	0.819	3.7256	0	0.316		
+Aquatic Acute	Aquatic Acute	Navajo Nation	Dissolved	Copper	NA	0.9422	-1.7	0	0.96		
+Aquatic Acute	Aquatic Acute	Navajo Nation	Dissolved	Lead	NA	1.273	-1.46	1		1.46203	0.14572
+Aquatic Acute	Aquatic Acute	Navajo Nation	Dissolved	Nickel	NA	0.846	2.255	0	0.998		
+Aquatic Acute	Aquatic Acute	Navajo Nation	Dissolved	Silver	NA	1.72	-6.59	0	0.85		
+Aquatic Acute	Aquatic Acute	Navajo Nation	Dissolved	Zinc	NA	0.8473	0.884	0	0.978		
+Aquatic Chronic	Aquatic Chronic	Navajo Nation	Dissolved	Cadmium	NA	0.7409	-4.719	1		1.101672	0.041838
+Aquatic Chronic	Aquatic Chronic	Navajo Nation	Dissolved	Chromium	NA	0.819	0.6848	0	0.86		
+Aquatic Chronic	Aquatic Chronic	Navajo Nation	Dissolved	Copper	NA	0.8545	-1.702	0	0.96		
+Aquatic Chronic	Aquatic Chronic	Navajo Nation	Dissolved	Lead	NA	1.273	-4.705	1		1.46203	0.145712
+Aquatic Chronic	Aquatic Chronic	Navajo Nation	Dissolved	Nickel	NA	0.846	0.0584	0	0.997		
+Aquatic Chronic	Aquatic Chronic	Navajo Nation	Dissolved	Zinc	NA	0.8473	0.884	0	0.986		
+Aquatic Acute	Aquatic Acute	Ute Mountain Ute	Dissolved	Cadmium	NA	1.0166	-3.924	1		1.136672	0.041838
+Aquatic Acute	Aquatic Acute	Ute Mountain Ute	Dissolved	Chromium	NA	0.819	3.7256	0	0.316		
+Aquatic Acute	Aquatic Acute	Ute Mountain Ute	Dissolved	Copper	NA	0.9422	-1.7	0	0.96		
+Aquatic Acute	Aquatic Acute	Ute Mountain Ute	Dissolved	Lead	NA	1.273	-1.46	1		1.46203	0.14572
+Aquatic Acute	Aquatic Acute	Ute Mountain Ute	Dissolved	Nickel	NA	0.846	2.255	0	0.998		
+Aquatic Acute	Aquatic Acute	Ute Mountain Ute	Dissolved	Silver	NA	1.72	-6.52	0	0.85		
+Aquatic Acute	Aquatic Acute	Ute Mountain Ute	Dissolved	Zinc	NA	0.8473	0.884	0	0.978		
+Aquatic Chronic	Aquatic Chronic	Ute Mountain Ute	Dissolved	Cadmium	NA	0.7409	-4.719	1		1.101672	0.041838
+Aquatic Chronic	Aquatic Chronic	Ute Mountain Ute	Dissolved	Chromium	NA	0.819	0.6848	0	0.86		
+Aquatic Chronic	Aquatic Chronic	Ute Mountain Ute	Dissolved	Copper	NA	0.8545	-1.702	0	0.96		
+Aquatic Chronic	Aquatic Chronic	Ute Mountain Ute	Dissolved	Lead	NA	1.273	-4.705	1		1.46203	0.145712
+Aquatic Chronic	Aquatic Chronic	Ute Mountain Ute	Dissolved	Nickel	NA	0.846	0.0584	0	0.997		
+Aquatic Chronic	Aquatic Chronic	Ute Mountain Ute	Dissolved	Zinc	NA	0.8473	0.884	0	0.986		
+Aquatic Chronic	Aquatic Chronic	Ute Mountain Ute	Dissolved	Silver	NA	1.72	-9.06	0	0.85		
