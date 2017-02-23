@@ -5,8 +5,7 @@ library(tidyr)
 #The purpose of this tool is to screen GKM related datasets containing metals concentrations in the water column against water quality standards for specific areas.
 
 #Read in screening critiera and sample data
-##NOTE: It is very important that you preserve numeric precision in your input files!
-setwd("L:/Priv/AnimasRiver/ARP_River_Modeling/WASP_Modeling/WASP Appendices/WQScreen")
+##NOTE: It is very important that you preserve numeric precision in your input files
 WQCritSS <-  read.table("WQCriteriaTot.txt",sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
 ObsTot <- read.table("ObservedData_CurrentNDsasZero_HistNDsasLim.txt",sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
 WQCritHardness <- read.table("WQCriteriawHardness.txt",sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
