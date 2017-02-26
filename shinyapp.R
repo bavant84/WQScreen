@@ -8,6 +8,9 @@ library(leaflet)
 library(dplyr)
 library(reshape2)
 library(jsonlite)
+library(rgdal)
+library(RJSONIO)
+library(tibble)
 
 #This tool was created by Brian Avant
 #The purpose of this tool is to screen GKM related datasets containing metals concentrations in the water column against water quality standards for specific areas.
@@ -25,8 +28,21 @@ WQCritSS_clean$variable <- as.character(WQCritSS_clean$variable, stringsAsFactor
 namevector <- c("maSlope","mbIntercept", "alphaBeta", "conversionFactor", "alpha", "beta")
 WQCritSS_clean[,namevector] <- NA
 WQCritAll <- rbind(WQCritSS_clean,WQCritHardness)
-###Dropdown menus
 
+#create output data.frames
+rows <- nrow(WQCritAll)
+output_screen <- data.frame(Designated_Use = character(rows), 
+                            ScreenType = character(rows), 
+                            Region = character(rows), 
+                            River = character(rows), 
+                            Time_Period = character(rows), 
+                            Sample_Type = character(rows), 
+                            Metal = character(rows), 
+                            Times_Exceeded = numeric(rows), 
+                            Number_Screened = numeric(rows), 
+                            stringsAsFactors=FALSE)
+
+###Dropdown menus
 Uniqueregion <- unique(WQCritSS_clean$Region)
 Uniqueregion <- c("Select All",Uniqueregion)
 uniquesampletype <- unique(WQCritSS_clean$Sample_Type)
@@ -35,6 +51,29 @@ uniquemetal <- unique(WQCritSS_clean$variable)
 uniquemetal <- c("Select All",uniquemetal)
 Criterialist <- c("States","EPA Regions","Tribes")
 
+###latlong Conversion Function #######################################################
+latlong2state <- function(pointsDF) {
+    # Prepare SpatialPolygons object with one SpatialPolygon
+    # per state (plus DC, minus HI & AK)
+    states <- map('state', fill=TRUE, col="transparent", plot=FALSE)
+    #tribes <- fromJSON("Tribal_Lands.json")
+    IDs <- sapply(strsplit(states$names, ":"), function(x) x[1])
+    states_sp <- map2SpatialPolygons(states, IDs=IDs,
+                                     proj4string=CRS("+proj=longlat +datum=WGS84"))
+    
+    # Convert pointsDF to a SpatialPoints object 
+    pointsSP <- SpatialPoints(pointsDF, 
+                              proj4string=CRS("+proj=longlat +datum=WGS84"))
+    
+    # Use 'over' to get _indices_ of the Polygons object containing each point 
+    indices <- over(pointsSP, states_sp)
+    
+    # Return the state names of the Polygons object containing each point
+    stateNames <- sapply(states_sp@polygons, function(x) x@ID)
+    stateNames[indices]
+}
+
+####################################################################################
 i=0
 j=0
 b=1
@@ -47,6 +86,7 @@ ui <- fluidPage(
              tabPanel("Inputs",
                       fluidRow(column(4,
                                       wellPanel(fileInput(inputId = "Samples", label = "Import Samples File"),
+                                                radioButtons(inputId = "Spatialdist", label ="Location Input Type",c("GKM"="GKM","Lat Lon"="LatLon")),
                                                 checkboxInput(inputId = "checked", 
                                                               label = "Include metals that were screened but did not exceed criteria",
                                                               value = FALSE),
@@ -94,71 +134,52 @@ server <- function(input, output) {
     })
     
   observeEvent(input$Click, {
-      #output$crit <- renderPrint({
-         # message("Running Screen") #console
-         # cat("Running Screen") #shinyapp
-     # })
+      df <- filedata()
       
-    df <- filedata()
-    Tribes <- df[complete.cases(df[,3]),]
-    Tribes2 <- df[complete.cases(df[,4]),]
-    colnames(Tribes) [3] <- "Region"
-    colnames(Tribes2) [4] <- "Region"
-    colnames(df) [2] <- "Region"
-    ObsAllRegions <- rbind(df[,-c(3:4)],Tribes[,c(-2,-4)],Tribes2[,-c(2:3)])
-    
- 
-    #Cap hardness values based on specific criteria
-    obsCapped <- within(ObsAllRegions, Hardness[Hardness>400] <- 400) #Maximum hardness of 400 mg/L for most criteria in the region
-    #create output data.frames
-    rows <- nrow(WQCritSS_clean)
-    output_screen <- data.frame(Designated_Use = character(rows), 
-                                ScreenType = character(rows), 
-                                Region = character(rows), 
-                                River = character(rows), 
-                                Time_Period = character(rows), 
-                                Sample_Type = character(rows), 
-                                Metal = character(rows), 
-                                Times_Exceeded = numeric(rows), 
-                                Number_Screened = numeric(rows), 
-                                stringsAsFactors=FALSE)
-    #This is the main function of the tool. For each sample the applicable screening criteria are identified and used to 
-    ## determine the number of times a WQ criteria has been exceeded for a specific screen.
-    UniqueObs <- unique(obsCapped[c("Region","Sample_Type","River","Time_Period")]) 
-    
+      if (input$Spatialdist == "LatLon") {
+          
+          samplecoords <- select(df, c(Lon,Lat))
+          Region <- str_to_title(latlong2state(samplecoords)) #add tribal lands and regions to latlong2state function; Also remove nonstates from list
+          ObsAllRegions <- add_column(df, Region, .after = 1) #add regions column with state names by coords
+          
+          #UniqueObs <- unique(obsCapped)
+          index1 <- 1 + which( colnames(ObsAllRegions)=="Hardness" )
+      } else {
+          Tribes <- df[complete.cases(df[,3]),]
+          Tribes2 <- df[complete.cases(df[,4]),]
+          colnames(Tribes) [3] <- "Region"
+          colnames(Tribes2) [4] <- "Region"
+          colnames(df) [2] <- "Region"
+          ObsAllRegions <- rbind(df[,-c(3:4)],Tribes[,c(-2,-4)],Tribes2[,-c(2:3)])
+          
+          index1 <- 1 + which( colnames(ObsAllRegions)=="Hardness" )
+          }
+          #Cap hardness values based on specific criteria
+          obsCapped <- within(ObsAllRegions, Hardness[Hardness>400] <- 400) #Maximum hardness of 400 mg/L for most criteria in the region
+          
+          #This is the main function of the tool. For each sample the applicable screening criteria are identified and used to 
+          ## determine the number of times a WQ criteria has been exceeded for a specific screen.
+          UniqueObs <- unique(obsCapped[c("Region","Sample_Type","River","Time_Period")]) 
+      
     for (i in 1:nrow(UniqueObs)) { #loops through each sample by unique combinations of region and conc type(row)
         
-        currentRegion <- UniqueObs[i,1]
-        currentSampleType <- UniqueObs[i,2]
-        currentRiver <- UniqueObs[i,3]
-        currentTimePeriod <- UniqueObs[i,4]
-        message <- paste(currentRegion, currentSampleType, currentRiver,currentTimePeriod,sep = " ")
+############ Figure out how to display console messages in the Shiny app to let users know progress of code
+        #currentRegion <- UniqueObs[i,1]
+        #currentSampleType <- UniqueObs[i,2]
+        #currentRiver <- UniqueObs[i,3]
+        #currentTimePeriod <- UniqueObs[i,4]
+        #message <- paste(currentRegion, currentSampleType, currentRiver,currentTimePeriod,sep = " ")
         
-        rv1 <- reactiveValues(data= message)
-      
-      
-      
-      #output$crit <- renderPrint({
-            #message(rv1$data)
-            #cat(rv1$data)
-        #})
+        #rv1 <- reactiveValues(data= message)
+        
+        
 
-      for (j in 10:ncol(obsCapped)){ #loops through each metal
+      for (j in index1:ncol(obsCapped)){ #loops through each metal
         tempSamples <- filter(obsCapped, Region==UniqueObs[i,1], 
                               Sample_Type==UniqueObs[i,2], 
                               River==UniqueObs[i,3], 
                               Time_Period==UniqueObs[i,4]) #subset observed data by unique combination
         
-        currentMetal <- colnames(tempSamples[j])
-        
-        rv2 <- reactiveValues(data= currentMetal)
-        
-        
-        
-        #output$metal <- renderPrint({
-            #message(rv2$data)
-            #cat(rv2$data)
-        #})
         
         print(colnames(tempSamples[j]))
             
