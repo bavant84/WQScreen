@@ -27,10 +27,9 @@ library(xlsx)
 
 ## Read in screening critiera and sample data
 ## NOTE: It is very important that you preserve numeric precision in your input files! To do this make sure cells with numerical values are General format.
-setwd("C:/Users/bavant/Dropbox/WQScreen") #work /Git/WQScreen
-#setwd("C:/Users/Brian/Dropbox/WQScreen") #laptop wd
+#setwd("C:/Users/bavant/Dropbox/WQScreen") #work /Git/WQScreen
+setwd("C:/Users/Brian/Dropbox/WQScreen") #laptop wd
 WQCritSS <-  read.table("WQCriteriaTot.txt",sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
-#head(WQCritSS)
 WQCritHardness <- read.table("WQCriteriawHardness.txt",sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
 ## Reformat WQ Screening Criteria
 WQCritmelt <- melt(WQCritSS,id.vars=c("Designated_Use","ScreenType","NAME","Spatial_Type","Sample_Type"))
@@ -42,26 +41,6 @@ WQCritAll <- rbind(WQCritSS_clean,WQCritHardness)
 
 ## Create Output data.frames
 rows <- nrow(WQCritmelt)
-
-output_screen1 <- data.frame(Designated_Use = character(rows), 
-                            ScreenType = character(rows), 
-                            NAME = character(rows), 
-                            River = character(rows), 
-                            Time_Period = character(rows), 
-                            Sample_Type = character(rows), 
-                            Metal = character(rows), 
-                            Times_Exceeded = numeric(rows), 
-                            Number_Screened = numeric(rows), 
-                            stringsAsFactors=FALSE)
-
-output_screen2 <- data.frame(Designated_Use = character(rows), 
-                             ScreenType = character(rows), 
-                             NAME = character(rows), 
-                             Sample_Type = character(rows), 
-                             Metal = character(rows), 
-                             Times_Exceeded = numeric(rows), 
-                             Number_Screened = numeric(rows), 
-                             stringsAsFactors=FALSE)
 
 Samplemarkerlayer <- data.frame(Sample_No = character(rows*10),
                                 Designated_Use = character(rows*10), 
@@ -98,17 +77,15 @@ regions_sp <- map2SpatialPolygons(regions, IDs=RegionsIDs,
 
 ### latlong Conversion Function #######################################################
 latlong2state <- function(pointsDF) {
-  ## Convert pointsDF to a SpatialPoints object 
-  pointsSP <- SpatialPoints(pointsDF, 
-                            proj4string=CRS("+proj=longlat +datum=WGS84"))
-  ## Use 'over' to get _indices_ of the Polygons object containing each point 
-  states_indices <- over(pointsSP, states_sp)
-  ## Return the state names of the Polygons object containing each point
-  stateNames <- sapply(states_sp@polygons, function(x) x@ID)
-  stateNames[states_indices]
-  #write.csv(stateNames[states_indices], file="statenameoutput.csv")
+    ## Convert pointsDF to a SpatialPoints object 
+    pointsSP <- SpatialPoints(pointsDF, 
+                              proj4string=CRS("+proj=longlat +datum=WGS84"))
+    ## Use 'over' to get _indices_ of the Polygons object containing each point 
+    states_indices <- over(pointsSP, states_sp)
+    ## Return the state names of the Polygons object containing each point
+    stateNames <- sapply(states_sp@polygons, function(x) x@ID)
+    stateNames[states_indices]
 }
-
 
 latlong2tribe <- function(pointsDF) {
     ## Convert pointsDF to a SpatialPoints object 
@@ -119,7 +96,6 @@ latlong2tribe <- function(pointsDF) {
     ## Return the state names of the Polygons object containing each point
     tribeNames <- sapply(tribes_sp@polygons, function(x) x@ID)
     tribeNames[tribes_indices]
-    
 }
 
 latlong2region <- function(pointsDF) {
@@ -131,7 +107,6 @@ latlong2region <- function(pointsDF) {
     ## Return the state names of the Polygons object containing each point
     regionNames <- sapply(regions_sp@polygons, function(x) x@ID)
     regionNames[regions_indices]
-    
 }
 ####################################################################################
 i=0
@@ -150,7 +125,11 @@ ui <- fluidPage(
                tabPanel("Inputs",
                         fluidRow(column(4,
                                         wellPanel(fileInput(inputId = "Samples", label = h3("Import Sample File")),
-                                                  radioButtons(inputId = "Spatialdist", label =h4("Location Input Type"),c("By Name"="Name","By Lat Lon"="LatLon")),
+                                                  radioButtons(inputId = "Spatialdist", label =h4("Location Input Type"),
+                                                               c("By Name"="Name","By Lat Lon"="LatLon")),
+                                                  checkboxInput(inputId = "Categories", 
+                                                                label = "Group by Spatial or Temporal Categories",
+                                                                value = FALSE),
                                                   checkboxInput(inputId = "checked", 
                                                                 label = "Include contaminants that were screened but did not exceed Authority",
                                                                 value = FALSE),
@@ -175,47 +154,41 @@ ui <- fluidPage(
                         fluidRow(column(6, textOutput(outputId="screenprogress"),
                                         textOutput(outputId="metal")
                         ))),
-             tabPanel("Interactive Map", id="Map", 
-                      div(class="outer",
-                          
-                          tags$head(
-                              # Include our custom CSS
-                              includeCSS("styles.css"),
-                              includeScript("gomap.js")
-                          ),
-                                      leafletOutput("map",width="100%",height="100%"),
-                                      absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
-                                                    draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
-                                                    width = 330, height = "auto",
-                                                    
-                                                    h2("Screening Metrics"),
-                                                    htmlOutput("Bound_selector"),
-                                                    wellPanel(htmlOutput("Metal_selector"),
+               tabPanel("Interactive Map", id="Map", 
+                        div(class="outer",
+                            tags$head(
+                                # Include our custom CSS
+                                includeCSS("styles.css"),
+                                includeScript("gomap.js")
+                            ),
+                            leafletOutput("map",width="100%",height="100%"),
+                            absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+                                          draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
+                                          width = 330, height = "auto",
+                                          h2("Screening Metrics"),
+                                          htmlOutput("Bound_selector"),
+                                          wellPanel(htmlOutput("Metal_selector"),
                                                     htmlOutput("Type_selector"),
                                                     htmlOutput("Criteria_selector"),
                                                     actionButton(inputId = "Clickmap", label = "Get Criteria")),
-                                                    conditionalPanel( condition = "output.Samplenrows",
-                                                                      checkboxInput("ImportedSamples", "Imported Samples")),
-                                                    conditionalPanel( condition = "output.WQXnrows",
-                                                                      checkboxInput("WQXSamples", "WQX/STORET Samples"))
-                                                    
-                                                    
-                                      ))
-                      ),   
-             
-             tabPanel("Tables",
-                      h2('Water Quality Screen Results'),
-                      dataTableOutput("Results")),
-             tabPanel("Figures",
-                      h2('Pivot Tables'),
-                      rpivotTableOutput("Pivot1")
-             )
-  )
+                                          conditionalPanel( condition = "output.Samplenrows",
+                                                            checkboxInput("ImportedSamples", "Imported Samples")),
+                                          conditionalPanel( condition = "output.WQXnrows",
+                                                            checkboxInput("WQXSamples", "WQX/STORET Samples"))
+                            ))
+               ),   
+               tabPanel("Tables",
+                        h2('Water Quality Screen Results'),
+                        dataTableOutput("Results")),
+               tabPanel("Figures",
+                        h2('Pivot Tables'),
+                        rpivotTableOutput("Pivot1")
+               )
+    )
 )
 
 server <- function(input, output) {
-######################### set up for interactive map ############################
-    
+############################## set up for interactive map ############################
     output$map <- renderLeaflet({
         leaflet() %>%
             addTiles() %>%
@@ -223,17 +196,14 @@ server <- function(input, output) {
     })
     
     output$Bound_selector <- renderUI({
-        
         selectInput(
             inputId = "Authority", 
             label = "Authority",
             choices = unique(as.character(WQCritAll$Spatial_Type)),
             selected = "States")
-        
     })
     
     output$Metal_selector <- renderUI({
-        
         available1 <- WQCritAll[WQCritAll$Spatial_Type == input$Authority,"variable"]
         selectInput(
             inputId = "Contaminant", 
@@ -244,7 +214,6 @@ server <- function(input, output) {
     })
     
     output$Type_selector <- renderUI({
-        
         available2 <- WQCritAll[WQCritAll$Spatial_Type == input$Authority & WQCritAll$variable == input$Contaminant,"Sample_Type"]
         selectInput(
             inputId = "Sampletype", 
@@ -255,132 +224,158 @@ server <- function(input, output) {
     })
     
     output$Criteria_selector <- renderUI({
-        
         available3 <- WQCritAll[WQCritAll$Spatial_Type == input$Authority & WQCritAll$variable == input$Contaminant & WQCritAll$Sample_Type == input$Sampletype,"ScreenType"]
         selectInput(
             inputId = "Criteria", 
             label = "Criteria",
             choices = unique(available3),
             selected = unique(available3)[1])
-        
     })
     
     Authority_Layer <- reactive({
-    Sp_layer <- if(is.null(input$Authority)) {
-        return(NULL)
-    } else if (input$Authority == "Tribes"){
-        tribesJSON
-    } else if (input$Authority == "States"){
-        statesJSON
-    } else if (input$Authority == "Regions"){
-        regionsJSON
-    } else {}
+        req(input$Authority)
+        if (input$Authority == "Tribes"){
+            tribesJSON
+        } else if (input$Authority == "States"){
+            statesJSON
+        } else if (input$Authority == "Regions"){
+            regionsJSON
+        } else {}
     })
     
     observe({
-        
         selected_layer <- Authority_Layer()
-        
         
         if(is.null(selected_layer)) {
             print("Nothing selected")
             leafletProxy("map") #%>% clearMarkers()
         }
         else{
-         leafletProxy("map",data = selected_layer) %>%
-             clearShapes() %>%
-             addPolygons(color = "#A9A9A9",
-                         fillColor = "#d3d3d3", 
-                         stroke = TRUE, 
-                         smoothFactor = 0.5,
-                         opacity = 1.0, fillOpacity = 0.5, weight = 1) #%>%
-             #setView(lng = -98.35, lat = 39.5,  zoom = 4) 
-             
+            leafletProxy("map",data = selected_layer) %>%
+                clearShapes() %>%
+                addPolygons(color = "#A9A9A9",
+                            fillColor = "#d3d3d3", 
+                            stroke = TRUE, 
+                            smoothFactor = 0.5,
+                            opacity = 1.0, fillOpacity = 0.5, weight = 1) #%>%
+            #setView(lng = -98.35, lat = 39.5,  zoom = 4) 
         }
     })
 ################################################################################# 
-  
-  filedata <- reactive({
-    infile <- input$Samples
-    if (is.null(infile)) {
-      ## User has not uploaded a file yet
-      return(NULL)
-      
-    }
-    read.table(infile$datapath,sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
-  })
-  
-  observeEvent(input$Click, {
-    df <- filedata()
+    filedata <- reactive({
+        req(input$Samples)
+        infile <- input$Samples
+        read.table(infile$datapath,sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
+    })
     
-    if (input$Spatialdist == "LatLon") { #lat lon version
+    observeEvent(input$Click, {
+        df <- filedata()
         
-        ## Sample Sites
-        #samplemarkers <- select(df, c(Lon,Lat,Samp_No))
-        #write.csv(df,"samplemarkers.csv")
-        ## Collect relevant spatial boundaries from sample lat lon
-        samplecoords <- select(df, c(Lon,Lat))
-        Spatial_Boundstate <- str_to_title(latlong2state(samplecoords)) 
-        Spatial_Boundregion <- str_to_title(latlong2region(samplecoords))
-        Spatial_Boundtribe <- str_to_title(latlong2tribe(samplecoords))
-        
-        
-        ## add States column to sample data and remove NAs
-        ObsSpatial_BoundsStatena <- add_column(df, Spatial_Boundstate, .after = 1) 
-        ObsSpatial_BoundsState <- complete.cases(ObsSpatial_BoundsStatena[,2])
-        ObsAllSpatial_BoundsState <- ObsSpatial_BoundsStatena[ObsSpatial_BoundsState, ]
-        #States_Layer <- mutate(ObsAllSpatial_BoundsState, Sp_Layer = "States") 
-        States_Layer <- add_column(ObsAllSpatial_BoundsState, Sp_Layer = "States", .after = 2) 
-        colnames(States_Layer)[2] <- "NAME"
-        
-        ## add EPA Region column to sample data and remove NAs
-        ObsSpatial_BoundsRegionna <- add_column(df, Spatial_Boundregion, .after = 1) 
-        ObsSpatial_BoundsRegion <- complete.cases(ObsSpatial_BoundsRegionna[,2])
-        ObsAllSpatial_BoundsRegion <- ObsSpatial_BoundsRegionna[ObsSpatial_BoundsRegion, ]
-        #Regions_Layer <- mutate(ObsAllSpatial_BoundsRegion, Sp_Layer = "Regions")
-        Regions_Layer <- add_column(ObsAllSpatial_BoundsRegion, Sp_Layer = "Regions", .after = 2) 
-        colnames(Regions_Layer)[2] <- "NAME"
-        
-        ## add Tribe column to sample data and remove NAs
-        ObsSpatial_BoundsTribena <- add_column(df, Spatial_Boundtribe, .after = 1)
-        ObsSpatial_BoundsTribe <- complete.cases(ObsSpatial_BoundsTribena[,2])
-        ObsAllSpatial_BoundsTribe <- ObsSpatial_BoundsTribena[ObsSpatial_BoundsTribe, ]
-        #Tribes_Layer <- mutate(ObsAllSpatial_BoundsTribe, Sp_Layer = "Tribes")
-        Tribes_Layer <- add_column(ObsAllSpatial_BoundsTribe, Sp_Layer = "Tribes", .after = 2) 
-        colnames(Tribes_Layer)[2] <- "NAME"
-        
-        ## append all sample boundaries to one df
-        ObsAllSpatial_Bounds <- rbind(States_Layer,Regions_Layer,Tribes_Layer)
-        index1 <- 1 + which( colnames(ObsAllSpatial_Bounds)=="Hardness" )
-        
+        if (input$Spatialdist == "LatLon") { #lat lon version
+            
+            ## Sample Sites
+            samplemarkers <- select(df, c(Lon,Lat,Samp_No))
+            #write.csv(df,"samplemarkers.csv")
+            ## Collect relevant spatial boundaries from sample lat lon
+            samplecoords <- select(df, c(Lon,Lat))
+            Spatial_Boundstate <- str_to_title(latlong2state(samplecoords)) 
+            Spatial_Boundregion <- str_to_title(latlong2region(samplecoords))
+            Spatial_Boundtribe <- str_to_title(latlong2tribe(samplecoords))
+            
+            ## add States column to sample data and remove NAs
+            ObsSpatial_BoundsStatena <- add_column(df, Spatial_Boundstate, .after = 1) 
+            ObsSpatial_BoundsState <- complete.cases(ObsSpatial_BoundsStatena[,2])
+            ObsAllSpatial_BoundsState <- ObsSpatial_BoundsStatena[ObsSpatial_BoundsState, ]
+            States_Layer <- add_column(ObsAllSpatial_BoundsState, Sp_Layer = "States", .after = 2) 
+            colnames(States_Layer)[2] <- "NAME"
+            
+            ## add EPA Region column to sample data and remove NAs
+            ObsSpatial_BoundsRegionna <- add_column(df, Spatial_Boundregion, .after = 1) 
+            ObsSpatial_BoundsRegion <- complete.cases(ObsSpatial_BoundsRegionna[,2])
+            ObsAllSpatial_BoundsRegion <- ObsSpatial_BoundsRegionna[ObsSpatial_BoundsRegion, ]
+            Regions_Layer <- add_column(ObsAllSpatial_BoundsRegion, Sp_Layer = "Regions", .after = 2) 
+            colnames(Regions_Layer)[2] <- "NAME"
+            
+            ## add Tribe column to sample data and remove NAs
+            ObsSpatial_BoundsTribena <- add_column(df, Spatial_Boundtribe, .after = 1)
+            ObsSpatial_BoundsTribe <- complete.cases(ObsSpatial_BoundsTribena[,2])
+            ObsAllSpatial_BoundsTribe <- ObsSpatial_BoundsTribena[ObsSpatial_BoundsTribe, ]
+            Tribes_Layer <- add_column(ObsAllSpatial_BoundsTribe, Sp_Layer = "Tribes", .after = 2) 
+            colnames(Tribes_Layer)[2] <- "NAME"
+            
+            ## append all sample boundaries to one df
+            ObsAllSpatial_Bounds <- rbind(States_Layer,Regions_Layer,Tribes_Layer)
+            
+        } else {
+            df2 <- add_column(df, Sp_Layer = "State", Lat = NA, Lon = NA, .after = 2)
+            Tribes_col <- df2[complete.cases(df2$Tribe),]
+            if (nrow(Tribes_col) > 0) {Tribes_col$Sp_Layer <- "Tribes"}
+            Tribes_col2 <- df2[complete.cases(df2$Secondary_Tribe),]
+            if (nrow(Tribes_col2) > 0) {Tribes_col2$Sp_Layer <- "Tribes"}
+            names(Tribes_col)[names(Tribes_col)=="Tribe"] <- "NAME"
+            names(Tribes_col2)[names(Tribes_col2)=="Secondary_Tribe"] <- "NAME"
+            names(df2)[names(df2)=="Region_State"] <- "NAME"
+            
+            ObsAllSpatial_Bounds <- rbind(df2[ , -which(names(df2) %in% c("Tribe","Secondary_Tribe"))],
+                                          Tribes_col[ , -which(names(Tribes_col) %in% c("Region_State","Secondary_Tribe"))],
+                                          Tribes_col2[ , -which(names(Tribes_col2) %in% c("Region_State","Tribe"))])
+        }
+        index <- 1 + which(colnames(ObsAllSpatial_Bounds)=="Hardness" )
         
         ## Cap hardness values based on specific criteria
         obsCapped <- within(ObsAllSpatial_Bounds, Hardness[Hardness>400] <- 400) #Maximum hardness of 400 mg/L for most criteria in the region
         
+        if (input$Categories==TRUE)  {
+            GroupCategories <- colnames(ObsAllSpatial_Bounds) [(which(colnames(ObsAllSpatial_Bounds)=="Lon")+1):(which(colnames(ObsAllSpatial_Bounds)=="Hardness")-1)]
+            ScreenCategories <- c("NAME",GroupCategories)
+            UniqueObs <- unique(obsCapped[ScreenCategories])
+            OutputCategories <- c("Designated_Use","ScreenType","NAME",GroupCategories,"Metal","Times_Exceeded","Number_Screened")
+            
+            output_screen <- data.frame(matrix(ncol = length(OutputCategories), nrow = rows), 
+                                  stringsAsFactors=FALSE)
+            names(output_screen) <- OutputCategories
+            output_screen[,OutputCategories] <- lapply(output_screen[,OutputCategories],as.character)
+            output_screen$Times_Exceeded <- as.numeric(output_screen$Times_Exceeded)
+            output_screen$Number_Screened <- as.numeric(output_screen$Number_Screened)
+            output_screen$Times_Exceeded[is.na(output_screen$Times_Exceeded)] <- 0
+            output_screen$Number_Screened[is.na(output_screen$Number_Screened)] <- 0
+            output_screen[is.na(output_screen)] <- ""
+        } else {
+            UniqueObs <- unique(obsCapped[c("NAME","Sample_Type")])
+            output_screen <- data.frame(Designated_Use = character(rows), 
+                                        ScreenType = character(rows), 
+                                        NAME = character(rows), 
+                                        Sample_Type = character(rows), 
+                                        Metal = character(rows), 
+                                        Times_Exceeded = numeric(rows), 
+                                        Number_Screened = numeric(rows), 
+                                        stringsAsFactors=FALSE)
+        }
+        
         ## This is the main function of the tool. For each sample the applicable screening criteria are identified and used to 
         ## determine the number of times a WQ criteria has been exceeded for a specific screen.
-        UniqueObs <- unique(obsCapped[c("NAME","Sample_Type")]) 
-        
         for (i in 1:nrow(UniqueObs)) { #loops through each sample by unique combinations of region and conc type(row)
             print(UniqueObs[i,])
-            ############ Figure out how to display console messages in the Shiny app to let users know progress of code
-            #currentSpatial_Bound <- UniqueObs[i,1]
-            #currentSampleType <- UniqueObs[i,2]
-            #currentRiver <- UniqueObs[i,3]
-            #currentTimePeriod <- UniqueObs[i,4]
-            #message <- paste(currentSpatial_Bound, currentSampleType, currentRiver,currentTimePeriod,sep = " ")
             
-            #rv1 <- reactiveValues(data= message)
-            
-            
-            for (j in index1:ncol(obsCapped)){ #loops through each metal
-                tempSamples <- filter(obsCapped, NAME==UniqueObs[i,1], #subset observed data by unique combination
-                                      Sample_Type==UniqueObs[i,2])
-                
+            if (input$Categories==TRUE)  { # Converts designated columns into Categories
+                filtercolumns <- which((names(obsCapped) %in% names(UniqueObs[i,]))==TRUE)
+                filt1 <- NULL
+                filt2 <- NULL
+                filtervar <- NULL
+                for (l in 1:length(filtercolumns)){ # generates variable with string to pass to filter_
+                    filt1[l] <- names(obsCapped[filtercolumns[l]])
+                    filt2[l] <-UniqueObs[i,l]
+                    filtervar[l] <-paste(filt1[l],"==","'",filt2[l],"'", sep="")
+                }
+                tempSamples <- filter_(obsCapped, filtervar) #subset observed data by unique combination
+            } else {
+                tempSamples <- filter(obsCapped, NAME==UniqueObs$NAME[i], Sample_Type==UniqueObs$Sample_Type[i]) #subset observed data by unique combination
+            }
+            for (j in index:ncol(obsCapped)){ #loops through each metal
                 print(colnames(tempSamples[j]))
                 
-                if (UniqueObs[i,1]=="New Mexico" & 
-                    UniqueObs[i,2]=="Total" & 
+                if (UniqueObs$NAME[i]=="New Mexico" & 
+                    UniqueObs$Sample_Type[i]=="Total" & 
                     colnames(tempSamples[j])=="Aluminum") { #New Mexico hardness limit for total Al = 220 mg/L
                     tempSamples <- within(tempSamples, Hardness[Hardness>220] <- 220)
                 }
@@ -415,7 +410,6 @@ server <- function(input, output) {
                                                          ObsMetal = character(nrow(tempSamples)),
                                                          stringsAsFactors=FALSE)
                             g=1
-                            
                             if (screen$alphaBeta[b] == 0) { #calculator function 1 
                                 for (y in 1:nrow(hardness)) { #iterate through each sample 
                                     screen$value[b] <- as.numeric((exp((screen$maSlope[b]*log(hardness$Hardness[y]))+screen$mbIntercept[b])*screen$conversionFactor[b])/1000) #calculate criteria
@@ -470,25 +464,41 @@ server <- function(input, output) {
                                     n=n+1
                                     Samplemarkerlayer[n,] <- aquatic_screen_cleaned[f,]
                                 }
-                                
-                                output_screen[m,] <- c(screen$Designated_Use[b], 
-                                                       screen$ScreenType[b], 
-                                                       screen$NAME[b], 
-                                                       screen$Sample_Type[b],
-                                                       screen$variable[b],
-                                                       metal_exceedance_count, 
-                                                       n_screened)
+                                if (input$Categories==TRUE)  {
+                                    nCategories <- (UniqueObs[,c(-1,-ncol(UniqueObs))])
+                                    screenvars1 <- c(screen$Designated_Use[b], 
+                                                     screen$ScreenType[b], 
+                                                     screen$NAME[b])
+                                    screenvars2 <- NULL
+                                    for (x in 1:length(GroupCategories[-length(GroupCategories)])) {
+                                        screenvars2[x] <- (nCategories[i,x])
+                                    }
+                                    screenvars3 <- c(screen$Sample_Type[b],
+                                                     screen$variable[b],
+                                                     metal_exceedance_count, 
+                                                     n_screened)
+                                    
+                                    screenvarTot <- c(screenvars1,screenvars2,screenvars3)
+                                    output_screen[m,] <- screenvarTot
+                                } else {
+                                    output_screen[m,] <- c(screen$Designated_Use[b], 
+                                                           screen$ScreenType[b], 
+                                                           screen$NAME[b], 
+                                                           screen$Sample_Type[b],
+                                                           screen$variable[b],
+                                                           metal_exceedance_count, 
+                                                           n_screened)
+                                }
                             }
                             
                         } else {
-                            metal_df <- cbind(tempSamples[1:(index1-1)] ,tempSamples[screen$variable[b]])
+                            metal_df <- cbind(tempSamples[1:(index-1)] ,tempSamples[screen$variable[b]])
                             
                             if (!all(is.na(tempSamples[screen$variable[b]]))) { #distinguishes between a non-detect sample and no sample
                                 metal_vector_nonas <- metal_df[!is.na(metal_df[screen$variable[b]]),]#remove NAs
                                 num_metal_samples <- nrow(metal_vector_nonas[screen$variable[b]]) #count the number of samples that are screened
                                 num_metal_samples[is.null(num_metal_samples)] <- -500
                                 if (num_metal_samples > 0) {
-                                    
                                     metal_vector_exceedances <- metal_vector_nonas[which(metal_vector_nonas[screen$variable[b]]>screen$value[b]),] #filter criteria with exceedances
                                     metal_exceedance_count <- nrow(metal_vector_exceedances) #count exceedances
                                     m=m+1
@@ -520,7 +530,23 @@ server <- function(input, output) {
                                         n=n+1
                                         Samplemarkerlayer[n,] <- noncalc_criteria[t,]            
                                     }
-                                    
+                                    if (input$Categories==TRUE)  {
+                                        nCategories <- (UniqueObs[,c(-1,-ncol(UniqueObs))])
+                                        screenvars1 <- c(screen$Designated_Use[b], 
+                                                         screen$ScreenType[b], 
+                                                         screen$NAME[b])
+                                        screenvars2 <- NULL
+                                        for (x in 1:length(GroupCategories[-length(GroupCategories)])) {
+                                            screenvars2[x] <- (nCategories[i,x])
+                                        }
+                                        screenvars3 <- c(screen$Sample_Type[b],
+                                                         screen$variable[b],
+                                                         metal_exceedance_count, 
+                                                         n_screened)
+                                        
+                                        screenvarTot <- c(screenvars1,screenvars2,screenvars3)
+                                        output_screen[m,] <- screenvarTot
+                                    } else {
                                     output_screen[m,] <- c(screen$Designated_Use[b], 
                                                            screen$ScreenType[b], 
                                                            screen$NAME[b], 
@@ -528,6 +554,7 @@ server <- function(input, output) {
                                                            screen$variable[b],
                                                            metal_exceedance_count, 
                                                            num_metal_samples) 
+                                    }
                                 }
                             }
                         }
@@ -541,224 +568,78 @@ server <- function(input, output) {
                 
             }
         }
+        output_screen <- filter(output_screen, ScreenType!="")
+        output_screen$Times_Exceeded <- as.numeric(output_screen$Times_Exceeded)
+        output_screen_Exceeded <- filter(output_screen, Times_Exceeded > 0)
+        write.csv(WQCritAll,file="WQCritAll.csv")
         
-    } else {
-        
-    Tribes_col <- df[complete.cases(df[,3]),]
-    Tribes_col2 <- df[complete.cases(df[,4]),]
-    colnames(Tribes_col) [3] <- "NAME"
-    colnames(Tribes_col2) [4] <- "NAME"
-    colnames(df) [2] <- "NAME"
-    df2 <- add_column(df, Lat = NA, Long = NA, .after = 2)
-    ObsAllSpatial_Bounds <- rbind(df2[,-c(5:6)],Tribes_col[,c(-2,-4)],Tribes_col2[,-c(2:3)])
-    
-    index1 <- 1 + which(colnames(ObsAllSpatial_Bounds)=="Hardness" )
-    
-    ## Cap hardness values based on specific criteria
-    obsCapped2 <- within(ObsAllSpatial_Bounds, Hardness[Hardness>400] <- 400) #Maximum hardness of 400 mg/L for most criteria in the region
-    
-    ## This is the main function of the tool. For each sample the applicable screening criteria are identified and used to 
-    ## determine the number of times a WQ criteria has been exceeded for a specific screen.
-    UniqueObs2 <- unique(obsCapped2[c("NAME","Sample_Type","River","Time_Period")]) 
-    
-    for (i in 1:nrow(UniqueObs2)) { #loops through each sample by unique combinations of region and conc type(row)
-        print(UniqueObs2[i,])
-        ############ Figure out how to display console messages in the Shiny app to let users know progress of code
-        #currentSpatial_Bound <- UniqueObs[i,1]
-        #currentSampleType <- UniqueObs[i,2]
-        #currentRiver <- UniqueObs[i,3]
-        #currentTimePeriod <- UniqueObs[i,4]
-        #message <- paste(currentSpatial_Bound, currentSampleType, currentRiver,currentTimePeriod,sep = " ")
-        
-        #rv1 <- reactiveValues(data= message)
-        
-        
-        
-        for (j in index1:ncol(obsCapped2)){ #loops through each metal
-            tempSamples2 <- filter(obsCapped2, NAME==UniqueObs2[i,1], 
-                                   Sample_Type==UniqueObs2[i,2], 
-                                   River==UniqueObs2[i,3], 
-                                   Time_Period==UniqueObs2[i,4]) #subset observed data by unique combination
-            
-            
-            print(colnames(tempSamples2[j]))
-            
-            
-            if (UniqueObs2[i,1]=="New Mexico" & 
-                UniqueObs2[i,2]=="Total" & 
-                colnames(tempSamples2[j])=="Aluminum") { #New Mexico hardness limit for total Al = 220 mg/L
-                tempSamples2 <- within(tempSamples2, Hardness[Hardness>220] <- 220)
-            }
-            hardness2 <- data.frame("Hardness" = tempSamples2$Hardness, 
-                                    "Conc" = tempSamples2[j], 
-                                    "ObsMetal" = colnames(tempSamples2[j]), 
-                                    stringsAsFactors=FALSE) 
-            screen2 <- filter(WQCritAll, 
-                              NAME==UniqueObs2$NAME[i], 
-                              Sample_Type==UniqueObs2$Sample_Type[i],
-                              variable==colnames(tempSamples2[j])) #iteratively queries WQ criteria based on sample data (sample & metal)
-            if (length(screen2$value) > 0){
-                for (b in 1:length(screen2$ScreenType)) { #loop through matching screens 
-                    if (!is.na(screen2$maSlope[b]==TRUE)) { #find screens that need to be calculated based on hardness
-                        aquatic_screen2 <- data.frame(Designated_Use = character(nrow(tempSamples2)), 
-                                                      ScreenType = character(nrow(tempSamples2)),
-                                                      NAME = character(nrow(tempSamples2)),
-                                                      Sample_Type = character(nrow(tempSamples2)),
-                                                      CritMetal = character(nrow(tempSamples2)),
-                                                      CalcValue = numeric(nrow(tempSamples2)),
-                                                      SampleValue = numeric(nrow(tempSamples2)),
-                                                      ObsMetal = character(nrow(tempSamples2)),
-                                                      stringsAsFactors=FALSE)
-                        g=1
-                        if (screen2$alphaBeta[b] == 0) { #calculator function 1 
-                            for (y in 1:nrow(hardness2)) { #iterate through each sample 
-                                screen2$value[b] <- as.numeric((exp((screen2$maSlope[b]*log(hardness2$Hardness[y]))+screen2$mbIntercept[b])*screen2$conversionFactor[b])/1000) #calculate criteria
-                                aquatic_screen2[g,] <- c(screen2$Designated_Use[b], 
-                                                         screen2$ScreenType[b], 
-                                                         screen2$NAME[b],
-                                                         screen2$Sample_Type[b],
-                                                         screen2$variable[b],
-                                                         screen2$value[b], 
-                                                         hardness2[y,2], 
-                                                         hardness2[y,3]) #collect criteria and sample value (for screen eval)
-                                aquatic_screen2[, c(6:7)] <- sapply(aquatic_screen2[, c(6:7)], as.numeric)
-                                g=g+1
-                            }
-                        } else if (screen2$alphaBeta[b] == 1) { #calculator function 2 
-                            for (z in 1:nrow(hardness2)) { #iterate through each sample
-                                screen2$value[b] <- as.numeric((exp((screen2$maSlope[b]*log(hardness2$Hardness[z])+screen2$mbIntercept[b]))*(screen2$alpha[b]-(log(hardness2$Hardness[z])*screen2$beta[b])))/1000) #calculate criteria
-                                aquatic_screen2[g,] <- c(screen2$Designated_Use[b], 
-                                                         screen2$ScreenType[b], 
-                                                         screen2$NAME[b],
-                                                         screen2$Sample_Type[b],
-                                                         screen2$variable[b],
-                                                         as.numeric(screen2$value[b]), 
-                                                         as.numeric(hardness2[z,2]), 
-                                                         hardness2[z,3]) #collect criteria and sample value (for screen eval)
-                                aquatic_screen2[, c(6:7)] <- sapply(aquatic_screen2[, c(6:7)], as.numeric)
-                                g=g+1
-                            }
-                        } else {
-                            cat("Something went wrong with the hardness calculator.", "The error occured calculating the screening criteria for",screen$Sample_Type[b],
-                                screen2$variable[b], "using the",screen2$ScreenType[b], "screen for",screen2$NAME[b])
-                        }
-                        aquatic_screen2_cleaned <- filter(aquatic_screen2, CalcValue >= 0, SampleValue >= 0) #remove empty rows in data.frame
-                        n_screened2 <- nrow(aquatic_screen2_cleaned) #count the number of samples that are screened
-                        n_screened[is.null(n_screened)] <- -500
-                        if (n_screened > 0) {
-                            metal_vector_exceedances2 <- which(aquatic_screen2_cleaned$SampleValue > aquatic_screen2_cleaned$CalcValue) #filter criteria with exceedances
-                            metal_exceedance_count2 <- length(metal_vector_exceedances) #count exceedances
-                            m=m+1
-                            
-                            
-                            
-                            output_screen1[m,] <- c(screen2$Designated_Use[b], 
-                                                    screen2$ScreenType[b], 
-                                                    screen2$NAME[b], 
-                                                    UniqueObs2[i,3], 
-                                                    UniqueObs2[i,4], 
-                                                    screen2$Sample_Type[b],
-                                                    screen2$variable[b],
-                                                    metal_exceedance_count2, 
-                                                    n_screened2)
-                        }
-                        
-                    } else {
-                        metal_df <- tempSamples2[screen2$variable[b]]
-                        if (!all(is.na(tempSamples2[screen2$variable[b]]))) { #distinguishes between a non-detect sample and no sample
-                            metal_vector_nonas <- metal_df[!is.na(metal_df)] #remove NAs
-                            num_metal_samples <- length(metal_vector_nonas) #count the number of samples that are screened
-                            num_metal_samples[is.null(num_metal_samples)] <- -500
-                            if (num_metal_samples > 0) {
-                                metal_vector_exceedances <- metal_vector_nonas[which(metal_vector_nonas>screen2$value[b])] #filter criteria with exceedances
-                                metal_exceedance_count <- length(metal_vector_exceedances) #count exceedances
-                                m=m+1
-                                output_screen1[m,] <- c(screen2$Designated_Use[b], 
-                                                        screen2$ScreenType[b], 
-                                                        screen2$NAME[b], 
-                                                        UniqueObs2[i,3], 
-                                                        UniqueObs2[i,4], 
-                                                        screen2$Sample_Type[b],
-                                                        screen2$variable[b],
-                                                        metal_exceedance_count, 
-                                                        num_metal_samples) 
-                            }
-                        }
-                    }
-                }
-            } else {
-                cat(UniqueObs2$Sample_Type[i], 
-                    colnames(tempSamples2[j]), 
-                    UniqueObs2$NAME[i], 
-                    file="echoFile.txt", append=TRUE)
-            }
+        if (exists("Samplemarkerlayer")){ 
+            #write.csv(samplemarkers,file="SamplelatlonOutput.csv",row.names = FALSE)
+            samplemarkers_screen <- filter(Samplemarkerlayer, ScreenType!="") %>%
+                mutate(Difference = SampleValue/CalcValue , Type = ifelse(Difference < 1,"NotExceeded","Exceeded"))
+            samplemarkers_screen$Lat <- as.numeric(samplemarkers_screen$Lat)
+            samplemarkers_screen$Lon <- as.numeric(samplemarkers_screen$Lon)
+            write.csv(samplemarkers_screen,file="Samplelatlondiferences.csv",row.names = FALSE)
         }
-    }
-  }
-    output_screen_GKM <- filter(output_screen1, ScreenType!="")
-    output_screen_GKM$Times_Exceeded <- as.numeric(output_screen_GKM$Times_Exceeded)
-    output_screen_Exceeded_GKM <- filter(output_screen_GKM, Times_Exceeded > 0)
-    
-    output_screen_LatLon <- filter(output_screen2, ScreenType!="")
-    output_screen_LatLon$Times_Exceeded <- as.numeric(output_screen_LatLon$Times_Exceeded)
-    output_screen_Exceeded_LatLon <- filter(output_screen_LatLon, Times_Exceeded > 0)
-    
-    write.csv(WQCritAll,file="WQCritAll.csv")
-    
-   
-    if (exists("samplemarkers")){ 
         
-        write.csv(samplemarkers,file="SamplelatlonOutput.csv",row.names = FALSE)
-        samplemarkers_screen <- filter(Samplemarkerlayer, ScreenType!="") %>%
-            mutate(Difference = SampleValue/CalcValue , Type = ifelse(Difference < 1,"NotExceeded","Exceeded"))
-        samplemarkers_screen$Lat <- as.numeric(samplemarkers_screen$Lat)
-        samplemarkers_screen$Lon <- as.numeric(samplemarkers_screen$Lon)
-        write.csv(samplemarkers_screen,file="Samplelatlondiferences.csv",row.names = FALSE)
-    }
-    
-    
-    output$Results = renderDataTable({
-      if (input$checked==FALSE)  {output_screen
-      } else {
-        if (input$checked==TRUE) {output_screen_Exceeded}
-      }
-    })
-    
-    output$Pivot1 = renderRpivotTable({
-      rpivotTable(data=output_screen, rows = c("Designated_Use","Time_Period"),cols = c("Metal","River","NAME"), rendererName = "Bar Chart",aggregatorName = "Sum over Sum", vals = c("Times_Exceeded","Number_Screened"))
-    })
-    output$screenprogress <- renderPrint({
-      message("Screen Complete")
-      cat("Screen Complete")
-      #message(samplemarkers)
-      
-      
-      })
+        output$Results = renderDataTable({
+            if (input$checked==FALSE)  {output_screen
+            } else {
+                if (input$checked==TRUE) {output_screen_Exceeded}
+            }
+        })
+        
+        output$Pivot1 = renderRpivotTable({
+            rpivotTable(data=output_screen, rows = c("Designated_Use","Time_Period"),cols = c("Metal","River","NAME"), rendererName = "Bar Chart",aggregatorName = "Sum over Sum", vals = c("Times_Exceeded","Number_Screened"))
+        })
+        output$screenprogress <- renderPrint({
+            message("Screen Complete")
+            cat("Screen Complete")
+            #message(samplemarkers)
+        })
     
     
     ################## End  of what click does ############
     #Filter data
-    datFilt <- reactive({ datamarkers <- samplemarkers_screen[samplemarkers_screen$Sp_Layer == input$Authority & 
-                                                                  samplemarkers_screen$CritMetal == input$Contaminant & 
-                                                                  samplemarkers_screen$Sample_Type == input$Sampletype & 
-                                                                  samplemarkers_screen$ScreenType == input$Criteria,]
+    datFilt <- reactive({ 
+        #if (exists("samplemarkers_screen")){ 
+        samplemarkers_screen[samplemarkers_screen$Sp_Layer == input$Authority & 
+                                                   samplemarkers_screen$CritMetal == input$Contaminant & 
+                                                   samplemarkers_screen$Sample_Type == input$Sampletype & 
+                                                   samplemarkers_screen$ScreenType == input$Criteria,]
+        #}
     })
     
-     output$Samplenrows <- reactive({
+    output$Samplenrows <- reactive({
         nrow(datFilt())
-         print(nrow(datFilt()))
-     })
-    
-     observe({
-    outputOptions(output, "Samplenrows", suspendWhenHidden = FALSE)  
-     })
+        print(nrow(datFilt()))
+    })
+   
+    observe({
+        outputOptions(output, "Samplenrows", suspendWhenHidden = FALSE)  
+    })
     
     #samplemarkers_screen$NAME == input$Authority & & samplemarkers_screen$Sample_Type == input$Sampletype
     #Tot_Al_markers <- filter(samplemarkers_screen, Designated_Use == "Aquatic Acute", Sample_Type == "Total", ObsMetal == "Aluminum")
     samplepal <- colorFactor(c("red","navy"), domain = c("NotExceeded","Exceeded"))
     #datFilt <- reactive(mydat[flag%in%input$InFlags])
-    observe({
+
+    observeEvent(input$Clickmap, {
+        QueryCrieria<-reactive({
+            # Get a subset of the criteria data based on drop down box selection
+            dataSet <- WQCritAll[WQCritAll$Spatial_Type == input$Authority & 
+                                     WQCritAll$variable == input$Contaminant & 
+                                     WQCritAll$Sample_Type == input$Sampletype & 
+                                     WQCritAll$ScreenType == input$Criteria,] #c("Spatial_Bound","value")
+            # Copy our GIS data
+            joinedDataset<-Authority_Layer()
+            
+            # Join the two datasets together
+            joinedDataset@data <- merge(dataSet,joinedDataset@data)
+            joinedDataset
+        })
         
+        #observe({
         if(is.null(datFilt())) {
             print("Nothing selected")
             #leafletProxy("map") %>% clearMarkers()
@@ -768,93 +649,67 @@ server <- function(input, output) {
                 leafletProxy("map") %>% clearMarkers()
             } else {
                 if (input$ImportedSamples==TRUE) {
-            leafletProxy("map",data=datFilt()) %>%
+                    leafletProxy("map",data=datFilt()) %>%
                         clearMarkers() %>%
-                addCircleMarkers(~Lon, ~Lat,
-                                 #layerId = "ImportedSamples",
-                                 radius = ~ifelse(Type == "NotExceeded", 3, ifelse(Difference >5,5,3+Difference)), #abs(Difference)
-                                 color = ~samplepal(Type),
-                                 popup = ~as.character(Sample_No),
-                                 stroke = FALSE, 
-                                 fillOpacity = 0.5,
-                                 #clusterOptions=markerClusterOptions(),
-                                 group = "Imported Samples")# %>%
-            #addLayersControl(
-            #overlayGroups = "Imported Samples",
-            #options = layersControlOptions(collapsed = FALSE))
-               } }
-            }
+                        addCircleMarkers(~Lon, ~Lat,
+                                         #layerId = "ImportedSamples",
+                                         radius = ~ifelse(Type == "NotExceeded", 3, ifelse(Difference >5,5,3+Difference)), #abs(Difference)
+                                         color = ~samplepal(Type),
+                                         popup = ~as.character(Sample_No),
+                                         stroke = FALSE, 
+                                         fillOpacity = 0.5,
+                                         #clusterOptions=markerClusterOptions(),
+                                         group = "Imported Samples") %>%
+                        fitBounds(~min(Lon), ~min(Lat), ~max(Lon), ~max(Lat))
+                    #addLayersControl(
+                    #overlayGroups = "Imported Samples",
+                    #options = layersControlOptions(collapsed = FALSE))
+                } }
+        }
         
     })
+    #})
     
-  })
-  
-  observeEvent(input$Clickmap, {
-      
-      QueryCrieria<-reactive({
-          
-          
-          # Get a subset of the criteria data based on drop down box selection
-          
-          #dataSet<-WQCritAll[WQCritAll$Spatial_Type == input$Authority  & WQCritAll$variable == input$Contaminant & WQCritAll$Sample_Type == input$Sampletype, WQCritAll$ScreenType == input$Criteria,]
-          dataSet <- WQCritAll[WQCritAll$Spatial_Type == input$Authority & WQCritAll$variable == input$Contaminant & WQCritAll$Sample_Type == input$Sampletype & WQCritAll$ScreenType == input$Criteria,] #c("Spatial_Bound","value")
-          #"Aluminum"  "Total"  "Agricultural Use"
-      #})
-          # Copy our GIS data
-     
-       #getDataSet <-reactive({
-          #selected_Layer2 <- Authority_Layer()
-          joinedDataset<-Authority_Layer()
-          #head(statesJSON@data, 50)
-          # Join the two datasets together
-          
-          joinedDataset@data <- merge(dataSet,joinedDataset@data)
-          
-          joinedDataset
-      })
-      
-      
-      
-      observe({
-          if(is.null(QueryCrieria())) {
-              print("No Citeria Selected")
-              #leafletProxy("map") %>% clearMarkers()
-          }
-          else{
-          sp_selection <- QueryCrieria()
-          
-          sp_dataframe <- sp_selection@data
-          #pal <- colorQuantile("YlGn", joinedDataset$value, n = 5) 
-          binpal <- colorBin("Blues", sp_selection$value, 6, pretty = FALSE)
-          #legendvalues <- sp_selection$value
-          Criteria_popup <- paste0("<strong>State: </strong>", 
-                                   sp_selection$NAME, 
-                                   "<br><strong>Criteria: </strong>",
-                                   sp_selection$ScreenType,
-                                   "<br><strong>Contaminant: </strong>",
-                                   sp_selection$Sample_Type," ",
-                                   sp_selection$variable,
-                                   "<br><strong>Concentration Limit: </strong>", 
-                                   formatC(sp_selection$value, big.mark=','))
-          
-         
-          if(is.null(QueryCrieria())) {
-              print("Nothing selected")
-              leafletProxy("map") #%>% clearMarkers()
-          }
-          else{
-              leafletProxy("map",data = QueryCrieria()) %>%
-                  clearShapes() %>%
-                  addPolygons(color = "#A9A9A9",
-                      fillColor = ~binpal(sp_selection$value), 
-                      stroke = TRUE, smoothFactor = 0.2,
-                      opacity = 1.0, fillOpacity = 0.5, weight = 1,
-                      popup = Criteria_popup) %>%
-                  setView(lng = -98.35, lat = 39.5,  zoom = 4) 
-              #addLegend("bottomleft",pal = binpal, values = ~sp_dataframe$values, opacity = 1)
-          }
-          }
-      })
-  })
+    #observe({
+    # if(is.null(QueryCrieria())) {
+    #   print("No Citeria Selected")
+    #   #leafletProxy("map") %>% clearMarkers()
+    # }
+    # else{
+    #   sp_selection <- QueryCrieria()
+    #   
+    #   sp_dataframe <- sp_selection@data
+    #   #pal <- colorQuantile("YlGn", joinedDataset$value, n = 5) 
+    #   binpal <- colorBin("Blues", sp_selection$value, 6, pretty = FALSE)
+    #   #legendvalues <- sp_selection$value
+    #   Criteria_popup <- paste0("<strong>State: </strong>", 
+    #                            sp_selection$NAME, 
+    #                            "<br><strong>Criteria: </strong>",
+    #                            sp_selection$ScreenType,
+    #                            "<br><strong>Contaminant: </strong>",
+    #                            sp_selection$Sample_Type," ",
+    #                            sp_selection$variable,
+    #                            "<br><strong>Concentration Limit: </strong>", 
+    #                            formatC(sp_selection$value, big.mark=','))
+    #   
+    #   
+    #   if(is.null(QueryCrieria())) {
+    #     print("Nothing selected")
+    #     leafletProxy("map") #%>% clearMarkers()
+    #   }
+    #   else{
+    #     leafletProxy("map",data = QueryCrieria()) %>%
+    #       clearShapes() %>%
+    #       addPolygons(color = "#A9A9A9",
+    #                   fillColor = ~binpal(sp_selection$value), 
+    #                   stroke = TRUE, smoothFactor = 0.2,
+    #                   opacity = 1.0, fillOpacity = 0.5, weight = 1,
+    #                   popup = Criteria_popup) %>%
+    #       setView(lng = -98.35, lat = 39.5,  zoom = 4) 
+    #     #addLegend("bottomleft",pal = binpal, values = ~sp_dataframe$values, opacity = 1)
+    #   }
+    # }
+    #})
+})
 }
 shinyApp(ui= ui, server = server)
