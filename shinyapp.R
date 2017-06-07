@@ -121,70 +121,70 @@ f=1
 g=0
 
 ui <- fluidPage(
-    navbarPage("WQ",id="nav",
-               tabPanel("Inputs",
-                        fluidRow(column(4,
-                                        wellPanel(fileInput(inputId = "Samples", label = h3("Import Sample File")),
-                                                  radioButtons(inputId = "Spatialdist", label =h4("Location Input Type"),
-                                                               c("By Name"="Name","By Lat Lon"="LatLon")),
-                                                  checkboxInput(inputId = "Categories", 
-                                                                label = "Group by Spatial or Temporal Categories",
-                                                                value = FALSE),
-                                                  checkboxInput(inputId = "checked", 
-                                                                label = "Include contaminants that were screened but did not exceed Authority",
-                                                                value = FALSE),
-                                                  actionButton(inputId = "Click", label = "Screen Samples"))),
-                                 column(5,wellPanel(dateRangeInput(inputId = "WQXDates", 
-                                                                   label = h4("Date Range for WQX Data")), 
-                                                    selectInput(inputId = "selectstate", label = h4("Select State"),
-                                                                choices = statesJSON$NAME, 
-                                                                selected = statesJSON$NAME[1]),
-                                                    selectInput(inputId = "selectcontaminant", label = h4("Select Contaminant"),
-                                                                choices = list("Aluminum" = 1, "Arsenic" = 2, "Lead" = 3), 
-                                                                selected = 1),
-                                                    selectInput(inputId = "selecttype", label = h4("Select Type"),
-                                                                choices = list("Total" = 1, "Dissolved" = 2), 
-                                                                selected = 1),
-                                                    selectInput(inputId = "selectunits", label = h4("Select Units"),
-                                                                choices = list("mg/l", "ug/l")),
-                                                    actionButton(inputId = "ClickWQX", label = "Download Data"))),
-                                 column(3,fileInput(inputId = "Reload", label = h3("Reload Results File")),
-                                        #radioButtons(inputId = "Spatialdist", label =h4("Location Input Type"),c("By Name"="Name","By Lat Lon"="LatLon")),
-                                        actionButton(inputId = "reClick", label = "Load Screened Samples"))),
-                        fluidRow(column(6, textOutput(outputId="screenprogress"),
-                                        textOutput(outputId="metal")
-                        ))),
-               tabPanel("Interactive Map", id="Map", 
-                        div(class="outer",
-                            tags$head(
-                                # Include our custom CSS
-                                includeCSS("styles.css"),
-                                includeScript("gomap.js")
-                            ),
-                            leafletOutput("map",width="100%",height="100%"),
-                            absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
-                                          draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
-                                          width = 330, height = "auto",
-                                          h2("Screening Metrics"),
-                                          htmlOutput("Bound_selector"),
-                                          wellPanel(htmlOutput("Metal_selector"),
-                                                    htmlOutput("Type_selector"),
-                                                    htmlOutput("Criteria_selector"),
-                                                    actionButton(inputId = "Clickmap", label = "Get Criteria")),
-                                          conditionalPanel( condition = "output.Samplenrows",
-                                                            checkboxInput("ImportedSamples", "Imported Samples")),
-                                          conditionalPanel( condition = "output.WQXnrows",
-                                                            checkboxInput("WQXSamples", "WQX/STORET Samples"))
-                            ))
-               ),   
-               tabPanel("Tables",
-                        h2('Water Quality Screen Results'),
-                        dataTableOutput("Results")),
-               tabPanel("Figures",
-                        h2('Pivot Tables'),
-                        rpivotTableOutput("Pivot1")
-               )
-    )
+  navbarPage("WQ",id="nav",
+             tabPanel("Inputs",
+                      fluidRow(column(4,
+                                      wellPanel(fileInput(inputId = "Samples", label = h3("Import Sample File")),
+                                                radioButtons(inputId = "Spatialdist", label =h4("Location Input Type"),
+                                                             c("By Name"="Name","By Lat Lon"="LatLon")),
+                                                checkboxInput(inputId = "Categories", 
+                                                              label = "Group by Spatial or Temporal Categories",
+                                                              value = FALSE),
+                                                checkboxInput(inputId = "checked", 
+                                                              label = "Include contaminants that were screened but did not exceed criteria",
+                                                              value = FALSE),
+                                                actionButton(inputId = "Click", label = "Screen Samples"))),
+                               column(5,wellPanel(dateRangeInput(inputId = "WQXDates", 
+                                                                 label = h4("Date Range for WQX Data")), 
+                                                  selectInput(inputId = "selectstate", label = h4("Select State"),
+                                                              choices = statesJSON$NAME, 
+                                                              selected = statesJSON$NAME[1]),
+                                                  selectInput(inputId = "selectcontaminant", label = h4("Select Contaminant"),
+                                                              choices = list("Aluminum" = 1, "Arsenic" = 2, "Lead" = 3), 
+                                                              selected = 1),
+                                                  selectInput(inputId = "selecttype", label = h4("Select Type"),
+                                                              choices = list("Total" = 1, "Dissolved" = 2), 
+                                                              selected = 1),
+                                                  selectInput(inputId = "selectunits", label = h4("Select Units"),
+                                                              choices = list("mg/l", "ug/l")),
+                                                  actionButton(inputId = "ClickWQX", label = "Download Data"))),
+                               column(3,fileInput(inputId = "Reload1", label = "Load Reload1_file.csv"),
+                                      fileInput(inputId = "Reload2", label = "Load Samplelatlondiferences.csv"),
+                                      actionButton(inputId = "reClick", label = "Load Screened Samples"))),
+                      fluidRow(column(6, textOutput(outputId="screenprogress"),
+                                      textOutput(outputId="metal")
+                      ))),
+             tabPanel("Interactive Map", id="Map", 
+                      div(class="outer",
+                          tags$head(
+                            # Include our custom CSS
+                            includeCSS("styles.css"),
+                            includeScript("gomap.js")
+                          ),
+                          leafletOutput("map",width="100%",height="100%"),
+                          absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+                                        draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
+                                        width = 330, height = "auto",
+                                        h2("Screening Metrics"),
+                                        htmlOutput("Bound_selector"),
+                                        wellPanel(htmlOutput("Metal_selector"),
+                                                  htmlOutput("Type_selector"),
+                                                  htmlOutput("Criteria_selector"),
+                                                  actionButton(inputId = "Clickmap", label = "Get Criteria")),
+                                        conditionalPanel( condition = "output.Samplenrows",
+                                                          checkboxInput("ImportedSamples", "Imported Samples")),
+                                        conditionalPanel( condition = "output.WQXnrows",
+                                                          checkboxInput("WQXSamples", "WQX/STORET Samples"))
+                          ))
+             ),   
+             tabPanel("Tables",
+                      h2('Water Quality Screen Results'),
+                      dataTableOutput("Results")),
+             tabPanel("Figures",
+                      h2('Pivot Tables'),
+                      rpivotTableOutput("Pivot1")
+             )
+  )
 )
 
 server <- function(input, output) {
@@ -268,6 +268,17 @@ server <- function(input, output) {
         read.table(infile$datapath,sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
     })
     
+    Reload1data <- reactive({
+      req(input$Reload1)
+      infile <- input$Reload1
+      read.csv(infile$datapath,sep=",",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
+    })
+    Reload2data <- reactive({
+      req(input$Reload2)
+      infile <- input$Reload2
+      read.csv(infile$datapath,sep=",",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
+    })
+    
     observeEvent(input$Click, {
         df <- filedata()
         
@@ -275,7 +286,7 @@ server <- function(input, output) {
             
             ## Sample Sites
             samplemarkers <- select(df, c(Lon,Lat,Samp_No))
-            #write.csv(df,"samplemarkers.csv")
+            #write.csv(df,"samplemarkers.csv", row.names=FALSE)
             ## Collect relevant spatial boundaries from sample lat lon
             samplecoords <- select(df, c(Lon,Lat))
             Spatial_Boundstate <- str_to_title(latlong2state(samplecoords)) 
@@ -312,13 +323,16 @@ server <- function(input, output) {
             if (nrow(Tribes_col) > 0) {Tribes_col$Sp_Layer <- "Tribes"}
             Tribes_col2 <- df2[complete.cases(df2$Secondary_Tribe),]
             if (nrow(Tribes_col2) > 0) {Tribes_col2$Sp_Layer <- "Tribes"}
+            Regions_col <- df2[complete.cases(df2$Region),]
+            if (nrow(Regions_col) > 0) {Regions_col$Sp_Layer <- "Regions"}
             names(Tribes_col)[names(Tribes_col)=="Tribe"] <- "NAME"
             names(Tribes_col2)[names(Tribes_col2)=="Secondary_Tribe"] <- "NAME"
-            names(df2)[names(df2)=="Region_State"] <- "NAME"
+            names(Regions_col)[names(Regions_col)=="Regions"] <- "NAME"
+            names(df2)[names(df2)=="State"] <- "NAME"
             
             ObsAllSpatial_Bounds <- rbind(df2[ , -which(names(df2) %in% c("Tribe","Secondary_Tribe"))],
-                                          Tribes_col[ , -which(names(Tribes_col) %in% c("Region_State","Secondary_Tribe"))],
-                                          Tribes_col2[ , -which(names(Tribes_col2) %in% c("Region_State","Tribe"))])
+                                          Tribes_col[ , -which(names(Tribes_col) %in% c("State","Secondary_Tribe"))],
+                                          Tribes_col2[ , -which(names(Tribes_col2) %in% c("State","Tribe"))])
         }
         index <- 1 + which(colnames(ObsAllSpatial_Bounds)=="Hardness" )
         
@@ -471,7 +485,7 @@ server <- function(input, output) {
                                                      screen$NAME[b])
                                     screenvars2 <- NULL
                                     for (x in 1:length(GroupCategories[-length(GroupCategories)])) {
-                                        screenvars2[x] <- (nCategories[i,x])
+                                      screenvars2[x] <- if (x>1) {nCategories[i,x]} else {nCategories[i]}
                                     }
                                     screenvars3 <- c(screen$Sample_Type[b],
                                                      screen$variable[b],
@@ -537,7 +551,7 @@ server <- function(input, output) {
                                                          screen$NAME[b])
                                         screenvars2 <- NULL
                                         for (x in 1:length(GroupCategories[-length(GroupCategories)])) {
-                                            screenvars2[x] <- (nCategories[i,x])
+                                          screenvars2[x] <- if (x>1) {nCategories[i,x]} else {nCategories[i]}
                                         }
                                         screenvars3 <- c(screen$Sample_Type[b],
                                                          screen$variable[b],
@@ -571,7 +585,9 @@ server <- function(input, output) {
         output_screen <- filter(output_screen, ScreenType!="")
         output_screen$Times_Exceeded <- as.numeric(output_screen$Times_Exceeded)
         output_screen_Exceeded <- filter(output_screen, Times_Exceeded > 0)
-        write.csv(WQCritAll,file="WQCritAll.csv")
+        #write.csv(WQCritAll,file="WQCritAll.csv", row.names=FALSE)
+        write.csv(output_screen,file="Reload1_file.csv", row.names=FALSE)
+        
         
         if (exists("Samplemarkerlayer")){ 
             #write.csv(samplemarkers,file="SamplelatlonOutput.csv",row.names = FALSE)
@@ -623,7 +639,7 @@ server <- function(input, output) {
     #Tot_Al_markers <- filter(samplemarkers_screen, Designated_Use == "Aquatic Acute", Sample_Type == "Total", ObsMetal == "Aluminum")
     samplepal <- colorFactor(c("red","navy"), domain = c("NotExceeded","Exceeded"))
     #datFilt <- reactive(mydat[flag%in%input$InFlags])
-
+    
     observeEvent(input$Clickmap, {
         QueryCrieria<-reactive({
             # Get a subset of the criteria data based on drop down box selection
@@ -711,5 +727,144 @@ server <- function(input, output) {
     # }
     #})
 })
+    observeEvent(input$reClick, {
+      output_screen <- Reload1data()
+      output_screen <- filter(output_screen, ScreenType!="")
+      output_screen$Times_Exceeded <- as.numeric(output_screen$Times_Exceeded)
+      output_screen_Exceeded <- filter(output_screen, Times_Exceeded > 0)
+      #write.csv(WQCritAll,file="WQCritAll.csv", row.names=FALSE)
+      
+      samplemarkers_screen <- Reload2data()
+
+      
+      output$Results = renderDataTable({
+        if (input$checked==FALSE)  {output_screen
+        } else {
+          if (input$checked==TRUE) {output_screen_Exceeded}
+        }
+      })
+      
+      output$Pivot1 = renderRpivotTable({
+        rpivotTable(data=output_screen, rows = c("Designated_Use","Time_Period"),cols = c("Metal","River","NAME"), rendererName = "Bar Chart",aggregatorName = "Sum over Sum", vals = c("Times_Exceeded","Number_Screened"))
+      })
+      output$screenprogress <- renderPrint({
+        message("Screen Complete")
+        cat("Screen Complete")
+        #message(samplemarkers)
+      })
+      
+      
+      ################## End  of what click does ############
+      #Filter data
+      datFilt <- reactive({ 
+        #if (exists("samplemarkers_screen")){ 
+        samplemarkers_screen[samplemarkers_screen$Sp_Layer == input$Authority & 
+                               samplemarkers_screen$CritMetal == input$Contaminant & 
+                               samplemarkers_screen$Sample_Type == input$Sampletype & 
+                               samplemarkers_screen$ScreenType == input$Criteria,]
+        #}
+      })
+      
+      output$Samplenrows <- reactive({
+        nrow(datFilt())
+        print(nrow(datFilt()))
+      })
+      
+      observe({
+        outputOptions(output, "Samplenrows", suspendWhenHidden = FALSE)  
+      })
+      
+      #samplemarkers_screen$NAME == input$Authority & & samplemarkers_screen$Sample_Type == input$Sampletype
+      #Tot_Al_markers <- filter(samplemarkers_screen, Designated_Use == "Aquatic Acute", Sample_Type == "Total", ObsMetal == "Aluminum")
+      samplepal <- colorFactor(c("red","navy"), domain = c("NotExceeded","Exceeded"))
+      #datFilt <- reactive(mydat[flag%in%input$InFlags])
+      
+      observeEvent(input$Clickmap, {
+        QueryCrieria<-reactive({
+          # Get a subset of the criteria data based on drop down box selection
+          dataSet <- WQCritAll[WQCritAll$Spatial_Type == input$Authority & 
+                                 WQCritAll$variable == input$Contaminant & 
+                                 WQCritAll$Sample_Type == input$Sampletype & 
+                                 WQCritAll$ScreenType == input$Criteria,] #c("Spatial_Bound","value")
+          # Copy our GIS data
+          joinedDataset<-Authority_Layer()
+          
+          # Join the two datasets together
+          joinedDataset@data <- merge(dataSet,joinedDataset@data)
+          joinedDataset
+        })
+        
+        #observe({
+        if(is.null(datFilt())) {
+          print("Nothing selected")
+          #leafletProxy("map") %>% clearMarkers()
+        }
+        else{
+          if (input$ImportedSamples==FALSE)  {
+            leafletProxy("map") %>% clearMarkers()
+          } else {
+            if (input$ImportedSamples==TRUE) {
+              leafletProxy("map",data=datFilt()) %>%
+                clearMarkers() %>%
+                addCircleMarkers(~Lon, ~Lat,
+                                 #layerId = "ImportedSamples",
+                                 radius = ~ifelse(Type == "NotExceeded", 3, ifelse(Difference >5,5,3+Difference)), #abs(Difference)
+                                 color = ~samplepal(Type),
+                                 popup = ~as.character(Sample_No),
+                                 stroke = FALSE, 
+                                 fillOpacity = 0.5,
+                                 #clusterOptions=markerClusterOptions(),
+                                 group = "Imported Samples") %>%
+                fitBounds(~min(Lon), ~min(Lat), ~max(Lon), ~max(Lat))
+              #addLayersControl(
+              #overlayGroups = "Imported Samples",
+              #options = layersControlOptions(collapsed = FALSE))
+            } }
+        }
+        
+      })
+      #})
+      
+      #observe({
+      # if(is.null(QueryCrieria())) {
+      #   print("No Citeria Selected")
+      #   #leafletProxy("map") %>% clearMarkers()
+      # }
+      # else{
+      #   sp_selection <- QueryCrieria()
+      #   
+      #   sp_dataframe <- sp_selection@data
+      #   #pal <- colorQuantile("YlGn", joinedDataset$value, n = 5) 
+      #   binpal <- colorBin("Blues", sp_selection$value, 6, pretty = FALSE)
+      #   #legendvalues <- sp_selection$value
+      #   Criteria_popup <- paste0("<strong>State: </strong>", 
+      #                            sp_selection$NAME, 
+      #                            "<br><strong>Criteria: </strong>",
+      #                            sp_selection$ScreenType,
+      #                            "<br><strong>Contaminant: </strong>",
+      #                            sp_selection$Sample_Type," ",
+      #                            sp_selection$variable,
+      #                            "<br><strong>Concentration Limit: </strong>", 
+      #                            formatC(sp_selection$value, big.mark=','))
+      #   
+      #   
+      #   if(is.null(QueryCrieria())) {
+      #     print("Nothing selected")
+      #     leafletProxy("map") #%>% clearMarkers()
+      #   }
+      #   else{
+      #     leafletProxy("map",data = QueryCrieria()) %>%
+      #       clearShapes() %>%
+      #       addPolygons(color = "#A9A9A9",
+      #                   fillColor = ~binpal(sp_selection$value), 
+      #                   stroke = TRUE, smoothFactor = 0.2,
+      #                   opacity = 1.0, fillOpacity = 0.5, weight = 1,
+      #                   popup = Criteria_popup) %>%
+      #       setView(lng = -98.35, lat = 39.5,  zoom = 4) 
+      #     #addLegend("bottomleft",pal = binpal, values = ~sp_dataframe$values, opacity = 1)
+      #   }
+      # }
+      #})
+    })
 }
 shinyApp(ui= ui, server = server)
