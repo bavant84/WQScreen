@@ -17,8 +17,8 @@ library(geojsonio)
 library(ggplot2)
 library(shinydashboard)
 library(rjson)
-library(dataRetrieval)
-library(rmapshaper)
+#library(dataRetrieval)
+#library(rmapshaper)
 library(DT)
 library(xlsx) 
 
@@ -42,7 +42,8 @@ WQCritAll <- rbind(WQCritSS_clean,WQCritHardness)
 ## Create Output data.frames
 rows <- nrow(WQCritmelt)
 
-Samplemarkerlayer <- data.frame(Sample_No = character(rows*10),
+Samplemarkerlayer <- data.frame(Date_Time = character(rows*10),
+                                Sample_No = character(rows*10),
                                 Designated_Use = character(rows*10), 
                                 Sp_Layer = character(rows*10),
                                 ScreenType = character(rows*10), 
@@ -55,26 +56,22 @@ Samplemarkerlayer <- data.frame(Sample_No = character(rows*10),
                                 SampleValue = numeric(rows*10),
                                 ObsMetal = character(rows*10),
                                 stringsAsFactors=FALSE)
-
 #################### Load GEOJSONs and Merge Criteria Data #####################
-statesJSON <- readOGR("selected_states.geojson", "OGRGeoJSON", verbose = FALSE) #selected_
+statesJSON <- readOGR("states.geojson", "OGRGeoJSON", verbose = FALSE) #selected_
 states <- map(statesJSON, fill=TRUE, col="transparent", plot=FALSE)
 StateIDs <- sapply(strsplit(states$names, ":"), function(x) x[1])
 states_sp <- map2SpatialPolygons(states, IDs=StateIDs,
                                  proj4string=CRS("+proj=longlat +datum=WGS84"))
-
 tribesJSON <- readOGR("tribes.geojson", "OGRGeoJSON", verbose = FALSE)
 tribesmap <- map(tribesJSON, fill=TRUE, col="transparent", plot=FALSE)
 TribesIDs <- sapply(strsplit(tribesmap$names, ":"), function(x) x[1])
 tribes_sp <- map2SpatialPolygons(tribesmap, IDs=TribesIDs,
                                  proj4string=CRS("+proj=longlat +datum=WGS84"))
-
 regionsJSON <- readOGR("EPA_regions.geojson", "OGRGeoJSON", verbose = FALSE)
 regions <- map(regionsJSON, fill=TRUE, col="transparent", plot=FALSE)
 RegionsIDs <- sapply(strsplit(regions$names, ":"), function(x) x[1])
 regions_sp <- map2SpatialPolygons(regions, IDs=RegionsIDs,
                                   proj4string=CRS("+proj=longlat +datum=WGS84"))
-
 ### latlong Conversion Function #######################################################
 latlong2state <- function(pointsDF) {
     ## Convert pointsDF to a SpatialPoints object 
@@ -86,7 +83,6 @@ latlong2state <- function(pointsDF) {
     stateNames <- sapply(states_sp@polygons, function(x) x@ID)
     stateNames[states_indices]
 }
-
 latlong2tribe <- function(pointsDF) {
     ## Convert pointsDF to a SpatialPoints object 
     pointsSP <- SpatialPoints(pointsDF, 
@@ -97,7 +93,6 @@ latlong2tribe <- function(pointsDF) {
     tribeNames <- sapply(tribes_sp@polygons, function(x) x@ID)
     tribeNames[tribes_indices]
 }
-
 latlong2region <- function(pointsDF) {
     ## Convert pointsDF to a SpatialPoints object 
     pointsSP <- SpatialPoints(pointsDF, 
@@ -121,39 +116,43 @@ f=1
 g=0
 
 ui <- fluidPage(
-  navbarPage("WQ",id="nav",
-             tabPanel("Inputs",
-                      fluidRow(column(4,
-                                      wellPanel(fileInput(inputId = "Samples", label = h3("Import Sample File")),
-                                                radioButtons(inputId = "Spatialdist", label =h4("Location Input Type"),
-                                                             c("By Name"="Name","By Lat Lon"="LatLon")),
-                                                checkboxInput(inputId = "Categories", 
-                                                              label = "Group by Spatial or Temporal Categories",
-                                                              value = FALSE),
-                                                checkboxInput(inputId = "checked", 
-                                                              label = "Include contaminants that were screened but did not exceed criteria",
-                                                              value = FALSE),
-                                                actionButton(inputId = "Click", label = "Screen Samples"))),
-                               column(5,wellPanel(dateRangeInput(inputId = "WQXDates", 
-                                                                 label = h4("Date Range for WQX Data")), 
-                                                  selectInput(inputId = "selectstate", label = h4("Select State"),
-                                                              choices = statesJSON$NAME, 
-                                                              selected = statesJSON$NAME[1]),
-                                                  selectInput(inputId = "selectcontaminant", label = h4("Select Contaminant"),
-                                                              choices = list("Aluminum" = 1, "Arsenic" = 2, "Lead" = 3), 
-                                                              selected = 1),
-                                                  selectInput(inputId = "selecttype", label = h4("Select Type"),
-                                                              choices = list("Total" = 1, "Dissolved" = 2), 
-                                                              selected = 1),
-                                                  selectInput(inputId = "selectunits", label = h4("Select Units"),
-                                                              choices = list("mg/l", "ug/l")),
-                                                  actionButton(inputId = "ClickWQX", label = "Download Data"))),
-                               column(3,fileInput(inputId = "Reload1", label = "Load Reload1_file.csv"),
-                                      fileInput(inputId = "Reload2", label = "Load Samplelatlondiferences.csv"),
-                                      actionButton(inputId = "reClick", label = "Load Screened Samples"))),
-                      fluidRow(column(6, textOutput(outputId="screenprogress"),
-                                      textOutput(outputId="metal")
-                      ))),
+  navbarPage("WQ Screen",id="nav",
+             tabPanel("Input Samples",
+                      titlePanel("Water Quality Screening Tool"),
+                      navlistPanel(
+                        "Input Options",
+                        tabPanel("GKM Demo",fluidRow(column(8,h3("View screened samples from the Gold King Mine release"),actionButton(inputId = "Demo", label = "Run Demo")))),
+                        tabPanel("Import Samples",fluidRow(column(8,h3("Import samples from text file and screen using appropriate criteria"),
+                                                                  wellPanel(fileInput(inputId = "Samples", label = h3("Import Sample File")),
+                                                                            radioButtons(inputId = "Spatialdist", label =h4("Location Input Type"),
+                                                                                         c("By Name"="Name","By Lat Lon"="LatLon")),
+                                                                            checkboxInput(inputId = "Categories", 
+                                                                                          label = "Group by Spatial or Temporal Categories",
+                                                                                          value = FALSE),
+                                                                            checkboxInput(inputId = "checked", 
+                                                                                          label = "Include contaminants that were screened but did not exceed criteria",
+                                                                                          value = FALSE),
+                                                                            actionButton(inputId = "Click", label = "Screen Samples"))))),
+                        tabPanel("Screen WQX Data",fluidRow(column(8,h3("Feature Coming Soon! Download WQX water quality historical data and screen it based on apppropriate criteria"),wellPanel(dateRangeInput(inputId = "WQXDates", 
+                                                                                              label = h4("Date Range for WQX Data")), 
+                                                                               selectInput(inputId = "selectstate", label = h4("Select State"),
+                                                                                           choices = statesJSON$NAME, 
+                                                                                           selected = statesJSON$NAME[1]),
+                                                                               selectInput(inputId = "selectcontaminant", label = h4("Select Contaminant"),
+                                                                                           choices = list("Aluminum" = 1, "Arsenic" = 2, "Lead" = 3), 
+                                                                                           selected = 1),
+                                                                               selectInput(inputId = "selecttype", label = h4("Select Type"),
+                                                                                           choices = list("Total" = 1, "Dissolved" = 2), 
+                                                                                           selected = 1),
+                                                                               selectInput(inputId = "selectunits", label = h4("Select Units"),
+                                                                                           choices = list("mg/l", "ug/l")),
+                                                                               actionButton(inputId = "ClickWQX", label = "Download Data"))))),
+                        tabPanel("Reload Prior Screen",fluidRow(column(8,h3("Reload input files from previous WQ Screen run"),fileInput(inputId = "Reload1", label = "Load Reload1_file.csv"),
+                                                                          fileInput(inputId = "Reload2", label = "Load Samplelatlondiferences.csv"),
+                                                                          actionButton(inputId = "reClick", label = "Load Screened Samples")))),
+                        fluidRow(column(9, textOutput(outputId="screenprogress"),
+                                        textOutput(outputId="metal")
+                        )))),
              tabPanel("Interactive Map", id="Map", 
                       div(class="outer",
                           tags$head(
@@ -174,7 +173,22 @@ ui <- fluidPage(
                                         conditionalPanel( condition = "output.Samplenrows",
                                                           checkboxInput("ImportedSamples", "Imported Samples")),
                                         conditionalPanel( condition = "output.WQXnrows",
-                                                          checkboxInput("WQXSamples", "WQX/STORET Samples"))
+                                                          checkboxInput("WQXSamples", "WQX/STORET Samples")),
+                                        # sliderInput("date_range", 
+                                        #             "Choose Date Range:", 
+                                        #             min = format(as.Date("2015-08-05 00:00"),format='%Y-%m-%d %H:%M'), 
+                                        #             max =   format(Sys.Date(),format='%Y-%m-%d %H:%M'),
+                                        #             value = c(format(as.Date("2015-08-05 00:00"),format='%Y-%m-%d %H:%M'), format(Sys.Date(),format='%Y-%m-%d %H:%M'), 
+                                        #                       animate = animationOptions(interval = 10, loop = FALSE, playButton = NULL, pauseButton = NULL))
+                                        # )
+                                        uiOutput("animationSlider")#,
+                                        # sliderInput("date_range", 
+                                        #             "Choose Date Range:", 
+                                        #             min = as.Date("2015-08-05 00:00"), 
+                                        #             max =   Sys.Date(),
+                                        #             value = c(as.Date("2015-08-05 00:00"), Sys.Date(), 
+                                        #                       animate = animationOptions(interval = 10, loop = FALSE, playButton = NULL, pauseButton = NULL))
+                                        # )
                           ))
              ),   
              tabPanel("Tables",
@@ -187,22 +201,21 @@ ui <- fluidPage(
   )
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
+  #options(shiny.maxRequestSize=30*1024^2)
 ############################## set up for interactive map ############################
     output$map <- renderLeaflet({
         leaflet() %>%
             addTiles() %>%
             setView(lng = -98.35, lat = 39.5,  zoom = 4)
     })
-    
     output$Bound_selector <- renderUI({
         selectInput(
             inputId = "Authority", 
-            label = "Authority",
+            label = "Water Quality Criteria Authority",
             choices = unique(as.character(WQCritAll$Spatial_Type)),
             selected = "States")
     })
-    
     output$Metal_selector <- renderUI({
         available1 <- WQCritAll[WQCritAll$Spatial_Type == input$Authority,"variable"]
         selectInput(
@@ -212,7 +225,6 @@ server <- function(input, output) {
             selected = unique(available1)[1])
         #unique(available1)[1]
     })
-    
     output$Type_selector <- renderUI({
         available2 <- WQCritAll[WQCritAll$Spatial_Type == input$Authority & WQCritAll$variable == input$Contaminant,"Sample_Type"]
         selectInput(
@@ -222,7 +234,6 @@ server <- function(input, output) {
             selected = unique(available2)[1])
         #unique(available2)[1]
     })
-    
     output$Criteria_selector <- renderUI({
         available3 <- WQCritAll[WQCritAll$Spatial_Type == input$Authority & WQCritAll$variable == input$Contaminant & WQCritAll$Sample_Type == input$Sampletype,"ScreenType"]
         selectInput(
@@ -231,7 +242,6 @@ server <- function(input, output) {
             choices = unique(available3),
             selected = unique(available3)[1])
     })
-    
     Authority_Layer <- reactive({
         req(input$Authority)
         if (input$Authority == "Tribes"){
@@ -242,7 +252,6 @@ server <- function(input, output) {
             regionsJSON
         } else {}
     })
-    
     observe({
         selected_layer <- Authority_Layer()
         
@@ -267,7 +276,6 @@ server <- function(input, output) {
         infile <- input$Samples
         read.table(infile$datapath,sep="\t",skip =0, header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
     })
-    
     Reload1data <- reactive({
       req(input$Reload1)
       infile <- input$Reload1
@@ -281,9 +289,7 @@ server <- function(input, output) {
     
     observeEvent(input$Click, {
         df <- filedata()
-        
         if (input$Spatialdist == "LatLon") { #lat lon version
-            
             ## Sample Sites
             samplemarkers <- select(df, c(Lon,Lat,Samp_No))
             #write.csv(df,"samplemarkers.csv", row.names=FALSE)
@@ -317,7 +323,7 @@ server <- function(input, output) {
             ## append all sample boundaries to one df
             ObsAllSpatial_Bounds <- rbind(States_Layer,Regions_Layer,Tribes_Layer)
             
-        } else {
+        } else { # instead of lat lon user provides columns declaring spatial boundaries
             df2 <- add_column(df, Sp_Layer = "State", Lat = NA, Lon = NA, .after = 2)
             Tribes_col <- df2[complete.cases(df2$Tribe),]
             if (nrow(Tribes_col) > 0) {Tribes_col$Sp_Layer <- "Tribes"}
@@ -365,7 +371,6 @@ server <- function(input, output) {
                                         Number_Screened = numeric(rows), 
                                         stringsAsFactors=FALSE)
         }
-        
         ## This is the main function of the tool. For each sample the applicable screening criteria are identified and used to 
         ## determine the number of times a WQ criteria has been exceeded for a specific screen.
         for (i in 1:nrow(UniqueObs)) { #loops through each sample by unique combinations of region and conc type(row)
@@ -393,14 +398,15 @@ server <- function(input, output) {
                     colnames(tempSamples[j])=="Aluminum") { #New Mexico hardness limit for total Al = 220 mg/L
                     tempSamples <- within(tempSamples, Hardness[Hardness>220] <- 220)
                 }
-                hardness <- data.frame("Hardness" = tempSamples$Hardness, 
-                                       "Conc" = tempSamples[j], 
-                                       "ObsMetal" = colnames(tempSamples[j]),
-                                       "Lat" = tempSamples$Lat,
-                                       "Lon" = tempSamples$Lon,
-                                       "Samp_No" = tempSamples$Samp_No,
-                                       "Sp_Layer" = tempSamples$Sp_Layer,
-                                       stringsAsFactors=FALSE) 
+              hardness <- data.frame("Hardness" = tempSamples$Hardness, 
+                                     "Conc" = tempSamples[j], 
+                                     "ObsMetal" = colnames(tempSamples[j]),
+                                     "Lat" = tempSamples$Lat,
+                                     "Lon" = tempSamples$Lon,
+                                     "Samp_No" = tempSamples$Samp_No,
+                                     "Sp_Layer" = tempSamples$Sp_Layer,
+                                     "Date_Time" = tempSamples$Date_Time,
+                                     stringsAsFactors=FALSE) 
                 
                 screen <- filter(WQCritAll, 
                                  NAME==UniqueObs$NAME[i], 
@@ -410,56 +416,59 @@ server <- function(input, output) {
                 if (length(screen$value) > 0){
                     for (b in 1:length(screen$ScreenType)) { #loop through matching screens 
                         if (!is.na(screen$maSlope[b]==TRUE)) { #find screens that need to be calculated based on hardness
-                            aquatic_screen <- data.frame(Sample_No = character(nrow(tempSamples)),
-                                                         Designated_Use = character(nrow(tempSamples)),
-                                                         Sp_Layer = character(nrow(tempSamples)),
-                                                         ScreenType = character(nrow(tempSamples)),
-                                                         Lat = numeric(nrow(tempSamples)),
-                                                         Lon = numeric(nrow(tempSamples)),
-                                                         NAME = character(nrow(tempSamples)),
-                                                         Sample_Type = character(nrow(tempSamples)),
-                                                         CritMetal = character(nrow(tempSamples)),
-                                                         CalcValue = numeric(nrow(tempSamples)),
-                                                         SampleValue = numeric(nrow(tempSamples)),
-                                                         ObsMetal = character(nrow(tempSamples)),
-                                                         stringsAsFactors=FALSE)
+                          aquatic_screen <- data.frame(Date_Time = character(nrow(tempSamples)),
+                                                       Sample_No = character(nrow(tempSamples)),
+                                                       Designated_Use = character(nrow(tempSamples)),
+                                                       Sp_Layer = character(nrow(tempSamples)),
+                                                       ScreenType = character(nrow(tempSamples)),
+                                                       Lat = numeric(nrow(tempSamples)),
+                                                       Lon = numeric(nrow(tempSamples)),
+                                                       NAME = character(nrow(tempSamples)),
+                                                       Sample_Type = character(nrow(tempSamples)),
+                                                       CritMetal = character(nrow(tempSamples)),
+                                                       CalcValue = numeric(nrow(tempSamples)),
+                                                       SampleValue = numeric(nrow(tempSamples)),
+                                                       ObsMetal = character(nrow(tempSamples)),
+                                                       stringsAsFactors=FALSE)
                             g=1
                             if (screen$alphaBeta[b] == 0) { #calculator function 1 
                                 for (y in 1:nrow(hardness)) { #iterate through each sample 
                                     screen$value[b] <- as.numeric((exp((screen$maSlope[b]*log(hardness$Hardness[y]))+screen$mbIntercept[b])*screen$conversionFactor[b])/1000) #calculate criteria
-                                    aquatic_screen[g,] <- c(hardness[y,6],
+                                    aquatic_screen[g,] <- c(hardness$Date_Time[y],
+                                                            hardness$Samp_No[y],
                                                             screen$Designated_Use[b],
-                                                            hardness[y,7],
+                                                            hardness$Sp_Layer[y],
                                                             screen$ScreenType[b], 
-                                                            hardness[y,4],
-                                                            hardness[y,5],
+                                                            hardness$Lat[y],
+                                                            hardness$Lon[y],
                                                             screen$NAME[b],
                                                             screen$Sample_Type[b],
                                                             screen$variable[b],
                                                             as.numeric(screen$value[b]), 
                                                             as.numeric(hardness[y,2]), 
-                                                            hardness[y,3]) #collect criteria and sample value (for screen eval)
+                                                            hardness$ObsMetal[y]) #collect criteria and sample value (for screen eval)
                                     
-                                    aquatic_screen[, c(10:11)] <- sapply(aquatic_screen[, c(10:11)], as.numeric)
+                                    aquatic_screen[, c(11:12)] <- sapply(aquatic_screen[, c(11:12)], as.numeric)
                                     g=g+1
                                 }
                             } else if (screen$alphaBeta[b] == 1) { #calculator function 2 
                                 for (z in 1:nrow(hardness)) { #iterate through each sample
                                     screen$value[b] <- as.numeric((exp((screen$maSlope[b]*log(hardness$Hardness[z])+screen$mbIntercept[b]))*(screen$alpha[b]-(log(hardness$Hardness[z])*screen$beta[b])))/1000) #calculate criteria
-                                    aquatic_screen[g,] <- c(hardness[z,6],
+                                    aquatic_screen[g,] <- c(hardness$Date_Time[z],
+                                                            hardness$Samp_No[z],
                                                             screen$Designated_Use[b],
-                                                            hardness[z,7],
+                                                            hardness$Sp_Layer[z],
                                                             screen$ScreenType[b], 
-                                                            hardness[z,4],
-                                                            hardness[z,5],
+                                                            hardness$Lat[z],
+                                                            hardness$Lon[z],
                                                             screen$NAME[b],
                                                             screen$Sample_Type[b],
                                                             screen$variable[b],
                                                             as.numeric(screen$value[b]), 
                                                             as.numeric(hardness[z,2]), 
-                                                            hardness[z,3]) #collect criteria and sample value (for screen eval)
+                                                            hardness$ObsMetal[z]) #collect criteria and sample value (for screen eval)
                                     
-                                    aquatic_screen[, c(10:11)] <- sapply(aquatic_screen[, c(10:11)], as.numeric)
+                                    aquatic_screen[, c(11:12)] <- sapply(aquatic_screen[, c(11:12)], as.numeric)
                                     g=g+1
                                 }
                             } else {
@@ -485,7 +494,7 @@ server <- function(input, output) {
                                                      screen$NAME[b])
                                     screenvars2 <- NULL
                                     for (x in 1:length(GroupCategories[-length(GroupCategories)])) {
-                                      screenvars2[x] <- if (x>1) {nCategories[i,x]} else {nCategories[i]}
+                                      screenvars2[x] <- if (length(GroupCategories[-length(GroupCategories)])>1) {nCategories[i,x]} else {nCategories[i]}
                                     }
                                     screenvars3 <- c(screen$Sample_Type[b],
                                                      screen$variable[b],
@@ -504,7 +513,6 @@ server <- function(input, output) {
                                                            n_screened)
                                 }
                             }
-                            
                         } else {
                             metal_df <- cbind(tempSamples[1:(index-1)] ,tempSamples[screen$variable[b]])
                             
@@ -526,7 +534,8 @@ server <- function(input, output) {
                                     
                                     reprowout <- singlerowout[rep(seq_len(nrow(singlerowout)), each=nrow(metal_vector_nonas)),]
                                     
-                                    noncalc_criteria <- data.frame(Sample_No = metal_vector_nonas$Samp_No,
+                                    noncalc_criteria <- data.frame(Date_Time = metal_vector_nonas$Date_Time,
+                                                                   Sample_No = metal_vector_nonas$Samp_No,
                                                                    Designated_Use = reprowout$Designated_Use, 
                                                                    Sp_Layer = metal_vector_nonas$Sp_Layer,
                                                                    ScreenType = reprowout$ScreenType, 
@@ -551,7 +560,7 @@ server <- function(input, output) {
                                                          screen$NAME[b])
                                         screenvars2 <- NULL
                                         for (x in 1:length(GroupCategories[-length(GroupCategories)])) {
-                                          screenvars2[x] <- if (x>1) {nCategories[i,x]} else {nCategories[i]}
+                                          screenvars2[x] <- if (length(GroupCategories[-length(GroupCategories)])>1) {nCategories[i,x]} else {nCategories[i]}
                                         }
                                         screenvars3 <- c(screen$Sample_Type[b],
                                                          screen$variable[b],
@@ -579,7 +588,6 @@ server <- function(input, output) {
                         UniqueObs$NAME[i], 
                         file="echoFile.txt", append=TRUE)
                 }
-                
             }
         }
         output_screen <- filter(output_screen, ScreenType!="")
@@ -588,13 +596,14 @@ server <- function(input, output) {
         #write.csv(WQCritAll,file="WQCritAll.csv", row.names=FALSE)
         write.csv(output_screen,file="Reload1_file.csv", row.names=FALSE)
         
-        
         if (exists("Samplemarkerlayer")){ 
             #write.csv(samplemarkers,file="SamplelatlonOutput.csv",row.names = FALSE)
             samplemarkers_screen <- filter(Samplemarkerlayer, ScreenType!="") %>%
                 mutate(Difference = SampleValue/CalcValue , Type = ifelse(Difference < 1,"NotExceeded","Exceeded"))
             samplemarkers_screen$Lat <- as.numeric(samplemarkers_screen$Lat)
             samplemarkers_screen$Lon <- as.numeric(samplemarkers_screen$Lon)
+            samplemarkers_screen$Date_Time <- as.POSIXct(samplemarkers_screen$Date_Time,format = '%m/%d/%Y %H:%M')#,usetz = FALSE)
+            samplemarkers_screen$Date_Time <- format(samplemarkers_screen$Date_Time,format='%Y-%m-%d') # %H:%M
             write.csv(samplemarkers_screen,file="Samplelatlondiferences.csv",row.names = FALSE)
         }
         
@@ -611,11 +620,8 @@ server <- function(input, output) {
         output$screenprogress <- renderPrint({
             message("Screen Complete")
             cat("Screen Complete")
-            #message(samplemarkers)
         })
-    
-    
-    ################## End  of what click does ############
+###################### End of what click does ############################################################
     #Filter data
     datFilt <- reactive({ 
         #if (exists("samplemarkers_screen")){ 
@@ -625,20 +631,14 @@ server <- function(input, output) {
                                                    samplemarkers_screen$ScreenType == input$Criteria,]
         #}
     })
-    
     output$Samplenrows <- reactive({
         nrow(datFilt())
         print(nrow(datFilt()))
     })
-   
     observe({
         outputOptions(output, "Samplenrows", suspendWhenHidden = FALSE)  
     })
-    
-    #samplemarkers_screen$NAME == input$Authority & & samplemarkers_screen$Sample_Type == input$Sampletype
-    #Tot_Al_markers <- filter(samplemarkers_screen, Designated_Use == "Aquatic Acute", Sample_Type == "Total", ObsMetal == "Aluminum")
     samplepal <- colorFactor(c("red","navy"), domain = c("NotExceeded","Exceeded"))
-    #datFilt <- reactive(mydat[flag%in%input$InFlags])
     
     observeEvent(input$Clickmap, {
         QueryCrieria<-reactive({
@@ -649,12 +649,10 @@ server <- function(input, output) {
                                      WQCritAll$ScreenType == input$Criteria,] #c("Spatial_Bound","value")
             # Copy our GIS data
             joinedDataset<-Authority_Layer()
-            
             # Join the two datasets together
             joinedDataset@data <- merge(dataSet,joinedDataset@data)
             joinedDataset
         })
-        
         #observe({
         if(is.null(datFilt())) {
             print("Nothing selected")
@@ -665,13 +663,26 @@ server <- function(input, output) {
                 leafletProxy("map") %>% clearMarkers()
             } else {
                 if (input$ImportedSamples==TRUE) {
-                    leafletProxy("map",data=datFilt()) %>%
-                        clearMarkers() %>%
+                  
+                      
+                                           
+                  leafletProxy("map",data=datFilt()) %>%
+                    clearMarkers() %>%
                         addCircleMarkers(~Lon, ~Lat,
                                          #layerId = "ImportedSamples",
                                          radius = ~ifelse(Type == "NotExceeded", 3, ifelse(Difference >5,5,3+Difference)), #abs(Difference)
                                          color = ~samplepal(Type),
-                                         popup = ~as.character(Sample_No),
+                                         popup = ~paste("<strong>Sample Date: </strong>", 
+                                                                as.Date(Date_Time), 
+                                                                "<br><strong>Sample Site: </strong>",
+                                                                as.character(Sample_No),
+                                                                "<br><strong>Contaminant: </strong>",
+                                                                as.character(Sample_Type)," ",
+                                                                as.character(CritMetal),
+                                                                "<br><strong>Criteria Value (mg/L): </strong>",
+                                                                round(as.numeric(CalcValue),digits = 4),
+                                                                "<br><strong>Sample Value (mg/L): </strong>",
+                                                                round(as.numeric(SampleValue),digits = 4)),
                                          stroke = FALSE, 
                                          fillOpacity = 0.5,
                                          #clusterOptions=markerClusterOptions(),
@@ -698,15 +709,7 @@ server <- function(input, output) {
     #   #pal <- colorQuantile("YlGn", joinedDataset$value, n = 5) 
     #   binpal <- colorBin("Blues", sp_selection$value, 6, pretty = FALSE)
     #   #legendvalues <- sp_selection$value
-    #   Criteria_popup <- paste0("<strong>State: </strong>", 
-    #                            sp_selection$NAME, 
-    #                            "<br><strong>Criteria: </strong>",
-    #                            sp_selection$ScreenType,
-    #                            "<br><strong>Contaminant: </strong>",
-    #                            sp_selection$Sample_Type," ",
-    #                            sp_selection$variable,
-    #                            "<br><strong>Concentration Limit: </strong>", 
-    #                            formatC(sp_selection$value, big.mark=','))
+    #   
     #   
     #   
     #   if(is.null(QueryCrieria())) {
@@ -726,24 +729,24 @@ server <- function(input, output) {
     #   }
     # }
     #})
+    
+    
+      
 })
     observeEvent(input$reClick, {
       output_screen <- Reload1data()
       output_screen <- filter(output_screen, ScreenType!="")
       output_screen$Times_Exceeded <- as.numeric(output_screen$Times_Exceeded)
       output_screen_Exceeded <- filter(output_screen, Times_Exceeded > 0)
-      #write.csv(WQCritAll,file="WQCritAll.csv", row.names=FALSE)
       
       samplemarkers_screen <- Reload2data()
 
-      
       output$Results = renderDataTable({
         if (input$checked==FALSE)  {output_screen
         } else {
           if (input$checked==TRUE) {output_screen_Exceeded}
         }
       })
-      
       output$Pivot1 = renderRpivotTable({
         rpivotTable(data=output_screen, rows = c("Designated_Use","Time_Period"),cols = c("Metal","River","NAME"), rendererName = "Bar Chart",aggregatorName = "Sum over Sum", vals = c("Times_Exceeded","Number_Screened"))
       })
@@ -752,7 +755,6 @@ server <- function(input, output) {
         cat("Screen Complete")
         #message(samplemarkers)
       })
-      
       
       ################## End  of what click does ############
       #Filter data
@@ -764,20 +766,15 @@ server <- function(input, output) {
                                samplemarkers_screen$ScreenType == input$Criteria,]
         #}
       })
-      
       output$Samplenrows <- reactive({
         nrow(datFilt())
         print(nrow(datFilt()))
       })
-      
       observe({
         outputOptions(output, "Samplenrows", suspendWhenHidden = FALSE)  
       })
       
-      #samplemarkers_screen$NAME == input$Authority & & samplemarkers_screen$Sample_Type == input$Sampletype
-      #Tot_Al_markers <- filter(samplemarkers_screen, Designated_Use == "Aquatic Acute", Sample_Type == "Total", ObsMetal == "Aluminum")
       samplepal <- colorFactor(c("red","navy"), domain = c("NotExceeded","Exceeded"))
-      #datFilt <- reactive(mydat[flag%in%input$InFlags])
       
       observeEvent(input$Clickmap, {
         QueryCrieria<-reactive({
@@ -788,12 +785,10 @@ server <- function(input, output) {
                                  WQCritAll$ScreenType == input$Criteria,] #c("Spatial_Bound","value")
           # Copy our GIS data
           joinedDataset<-Authority_Layer()
-          
           # Join the two datasets together
           joinedDataset@data <- merge(dataSet,joinedDataset@data)
           joinedDataset
         })
-        
         #observe({
         if(is.null(datFilt())) {
           print("Nothing selected")
@@ -810,60 +805,153 @@ server <- function(input, output) {
                                  #layerId = "ImportedSamples",
                                  radius = ~ifelse(Type == "NotExceeded", 3, ifelse(Difference >5,5,3+Difference)), #abs(Difference)
                                  color = ~samplepal(Type),
-                                 popup = ~as.character(Sample_No),
+                                 popup = ~paste("<strong>Sample Date: </strong>", 
+                                                as.Date(Date_Time), 
+                                                "<br><strong>Sample Site: </strong>",
+                                                as.character(Sample_No),
+                                                "<br><strong>Contaminant: </strong>",
+                                                as.character(Sample_Type)," ",
+                                                as.character(CritMetal),
+                                                "<br><strong>Criteria Value (mg/L): </strong>",
+                                                round(as.numeric(CalcValue),digits = 4),
+                                                "<br><strong>Sample Value (mg/L): </strong>",
+                                                round(as.numeric(SampleValue),digits = 4)),
                                  stroke = FALSE, 
                                  fillOpacity = 0.5,
                                  #clusterOptions=markerClusterOptions(),
                                  group = "Imported Samples") %>%
                 fitBounds(~min(Lon), ~min(Lat), ~max(Lon), ~max(Lat))
-              #addLayersControl(
-              #overlayGroups = "Imported Samples",
-              #options = layersControlOptions(collapsed = FALSE))
             } }
         }
-        
       })
       #})
       
+    })
+    observeEvent(input$Demo, {
+        #Work_DemoDir <- "C:/Users/bavant/Dropbox/WQScreen/GKM Demo Files"
+        #home_demo <- "C:/Users/Brian/Dropbox/WQScreen/GKM Demo Files"
+        output_screen <- read.csv("C:/Users/Brian/Dropbox/WQScreen/GKM Demo Files/Reload1_file.csv",sep=",", 
+                                header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
+      
+      
+      output_screen <- filter(output_screen, ScreenType!="")
+      output_screen$Times_Exceeded <- as.numeric(output_screen$Times_Exceeded)
+      output_screen_Exceeded <- filter(output_screen, Times_Exceeded > 0)
+      
+      samplemarkers_screen <- read.csv("C:/Users/Brian/Dropbox/WQScreen/GKM Demo Files/Samplelatlondiferences.csv",sep=",", 
+                                       header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
+      
+      output$Results = renderDataTable({
+        if (input$checked==FALSE)  {output_screen
+        } else {
+          if (input$checked==TRUE) {output_screen_Exceeded}
+        }
+      })
+      output$Pivot1 = renderRpivotTable({
+        rpivotTable(data=output_screen, rows = c("Designated_Use","Time_Period"),cols = c("Metal","River","NAME"), rendererName = "Bar Chart",aggregatorName = "Sum over Sum", vals = c("Times_Exceeded","Number_Screened"))
+      })
+      output$screenprogress <- renderPrint({
+        message("Screen Complete")
+        cat("Screen Complete")
+        #message(samplemarkers)
+      })
+
+      ################## End  of what click does ############
+      #Filter data
+      datFilt <- reactive({ 
+        #if (exists("samplemarkers_screen")){ 
+        samplemarkers_screen[samplemarkers_screen$Sp_Layer == input$Authority & 
+                               samplemarkers_screen$CritMetal == input$Contaminant & 
+                               samplemarkers_screen$Sample_Type == input$Sampletype & 
+                               samplemarkers_screen$ScreenType == input$Criteria,]
+        #}
+      })
+      
+      output$Samplenrows <- reactive({
+        nrow(datFilt())
+        print(nrow(datFilt()))
+      })
+      observe({
+        outputOptions(output, "Samplenrows", suspendWhenHidden = FALSE)  
+      })
+      
+      samplepal <- colorFactor(c("red","navy"), domain = c("NotExceeded","Exceeded"))
+      
+      observeEvent(input$Clickmap, {
+        QueryCrieria<-reactive({
+          # Get a subset of the criteria data based on drop down box selection
+          dataSet <- WQCritAll[WQCritAll$Spatial_Type == input$Authority & 
+                                 WQCritAll$variable == input$Contaminant & 
+                                 WQCritAll$Sample_Type == input$Sampletype & 
+                                 WQCritAll$ScreenType == input$Criteria,] #c("Spatial_Bound","value")
+          # Copy our GIS data
+          joinedDataset<-Authority_Layer()
+          # Join the two datasets together
+          joinedDataset@data <- merge(dataSet,joinedDataset@data)
+          joinedDataset
+        })
+        
+        #observe({
+        if(is.null(datFilt())) {
+          print("Nothing selected")
+        }
+        else{
+          if (input$ImportedSamples==FALSE)  {
+            leafletProxy("map") %>% clearMarkers()
+          } else {
+            if (input$ImportedSamples==TRUE) {
+              leafletProxy("map",data=datFilt()) %>%
+                clearMarkers() %>%
+                addCircleMarkers(~Lon, ~Lat,
+                                 #layerId = "ImportedSamples",
+                                 radius = ~ifelse(Type == "NotExceeded", 3, ifelse(Difference >5,5,3+Difference)), #abs(Difference)
+                                 color = ~samplepal(Type),
+                                 popup = ~paste("<strong>Sample Date: </strong>", 
+                                                as.Date(Date_Time), 
+                                                "<br><strong>Sample Site: </strong>",
+                                                as.character(Sample_No),
+                                                "<br><strong>Contaminant: </strong>",
+                                                as.character(Sample_Type)," ",
+                                                as.character(CritMetal),
+                                                "<br><strong>Criteria Value (mg/L): </strong>",
+                                                round(as.numeric(CalcValue),digits = 4),
+                                                "<br><strong>Sample Value (mg/L): </strong>",
+                                                round(as.numeric(SampleValue),digits = 4)),
+                                 stroke = FALSE, 
+                                 fillOpacity = 0.5,
+                                 #clusterOptions=markerClusterOptions(),
+                                 group = "Show Imported Samples") %>%
+                fitBounds(~min(Lon), ~min(Lat), ~max(Lon), ~max(Lat))
+            } }
+        }
+      })
+      val <- max(samplemarkers_screen$Date_Time)
+      output$animationSlider <- renderUI({
+        sliderInput("animationSlider2", "Date Range", min = as.Date("2015-08-05 00:00"), 
+                    max = as.Date(val), value = as.Date("2015-08-05 00:00"), step = 1, #c(as.Date("2015-08-05 00:00"), as.Date(Sys.Date()))
+                    animate = animationOptions(200))
+      })
+      
+      
+      
+      points <- reactive({
+        samplemarkers_screen %>% 
+          filter(Date_Time==input$animationSlider2)
+      })
+      
+      output$mymap <- renderLeaflet({
+        leaflet() %>%
+          addMarkers(data = points())#,popup=as.character(points()$a))
+      })
+      
       #observe({
-      # if(is.null(QueryCrieria())) {
-      #   print("No Citeria Selected")
-      #   #leafletProxy("map") %>% clearMarkers()
-      # }
-      # else{
-      #   sp_selection <- QueryCrieria()
-      #   
-      #   sp_dataframe <- sp_selection@data
-      #   #pal <- colorQuantile("YlGn", joinedDataset$value, n = 5) 
-      #   binpal <- colorBin("Blues", sp_selection$value, 6, pretty = FALSE)
-      #   #legendvalues <- sp_selection$value
-      #   Criteria_popup <- paste0("<strong>State: </strong>", 
-      #                            sp_selection$NAME, 
-      #                            "<br><strong>Criteria: </strong>",
-      #                            sp_selection$ScreenType,
-      #                            "<br><strong>Contaminant: </strong>",
-      #                            sp_selection$Sample_Type," ",
-      #                            sp_selection$variable,
-      #                            "<br><strong>Concentration Limit: </strong>", 
-      #                            formatC(sp_selection$value, big.mark=','))
-      #   
-      #   
-      #   if(is.null(QueryCrieria())) {
-      #     print("Nothing selected")
-      #     leafletProxy("map") #%>% clearMarkers()
-      #   }
-      #   else{
-      #     leafletProxy("map",data = QueryCrieria()) %>%
-      #       clearShapes() %>%
-      #       addPolygons(color = "#A9A9A9",
-      #                   fillColor = ~binpal(sp_selection$value), 
-      #                   stroke = TRUE, smoothFactor = 0.2,
-      #                   opacity = 1.0, fillOpacity = 0.5, weight = 1,
-      #                   popup = Criteria_popup) %>%
-      #       setView(lng = -98.35, lat = 39.5,  zoom = 4) 
-      #     #addLegend("bottomleft",pal = binpal, values = ~sp_dataframe$values, opacity = 1)
-      #   }
-      # }
+        #req(val)
+        # Control the value, min, max, and step.
+        # Step size is 2 when input value is even; 1 when value is odd.
+        #updateSliderInput(session, "date_range", min = as.Date("2015-08-05 00:00"), 
+                         # max = val, value = c(as.Date("2015-08-05 00:00"), Sys.Date()))#, 
+        #animate = animationOptions(interval = 10, loop = FALSE, playButton = NULL, pauseButton = NULL)))
+        #print(val)
       #})
     })
 }
