@@ -18,8 +18,8 @@ library(xlsx);      library(readxl)
 ## The purpose of this tool is to screen GKM related datasets containing metals concentrations in the water column against water quality standards for specific areas.
 
 ## Read in screening critiera and sample data
-setwd("C:/Users/bavant/Dropbox/WQScreen") #work /Git/WQScreen
-#setwd("C:/Users/Brian/Dropbox/WQScreen") #laptop wd
+# setwd("C:/Users/bavant/Dropbox/WQScreen/wq_screen") #work /Git/WQScreen
+setwd("C:/Users/Brian/Dropbox/WQScreen/wq_screen") #laptop wd
 WQCritSS <- read_excel("WQ Criteria and Sample Templates.xlsx", sheet = "WQCriteriaTot")
 WQCritHardness <- read_excel("WQ Criteria and Sample Templates.xlsx", sheet = "WQCriteriawHardness")
 
@@ -36,20 +36,20 @@ WQCritAll <- bind_rows(WQCritSS_clean,WQCritHardness)
 rows <- nrow(WQCritSS_clean)
 
 #################### Load GEOJSONs and Merge Criteria Data #####################
-statesJSON <- readOGR(dsn="states.geojson", layer = "states", verbose = FALSE) #selected_states
-# statesJSON <- readOGR("selected_states.geojson", "OGRGeoJSON", verbose = FALSE) #selected_
+# statesJSON <- readOGR(dsn="./Spatial Layers/states.geojson", layer = "states", verbose = FALSE) #selected_states
+statesJSON <- readOGR("./Spatial Layers/states.geojson", "OGRGeoJSON", verbose = FALSE) #selected_
 states <- map(statesJSON, fill=TRUE, col="transparent", plot=FALSE)
 StateIDs <- sapply(strsplit(states$names, ":"), function(x) x[1])
 states_sp <- map2SpatialPolygons(states, IDs=StateIDs,
                                  proj4string=CRS("+proj=longlat +datum=WGS84"))
-tribesJSON <- readOGR(dsn="tribes.geojson", layer = "tribes", verbose = FALSE)
-# tribesJSON <- readOGR("tribes.geojson", "OGRGeoJSON", verbose = FALSE)
+# tribesJSON <- readOGR(dsn="./Spatial Layers/tribes.geojson", layer = "tribes", verbose = FALSE)
+tribesJSON <- readOGR("./Spatial Layers/tribes.geojson", "OGRGeoJSON", verbose = FALSE)
 tribesmap <- map(tribesJSON, fill=TRUE, col="transparent", plot=FALSE)
 TribesIDs <- sapply(strsplit(tribesmap$names, ":"), function(x) x[1])
 tribes_sp <- map2SpatialPolygons(tribesmap, IDs=TribesIDs,
                                  proj4string=CRS("+proj=longlat +datum=WGS84"))
-regionsJSON <- readOGR(dsn="EPA_regions.geojson", layer = "EPA_regions", verbose = FALSE)
-# regionsJSON <- readOGR("EPA_regions.geojson", "OGRGeoJSON", verbose = FALSE)
+# regionsJSON <- readOGR(dsn="./Spatial Layers/EPA_regions.geojson", layer = "EPA_regions", verbose = FALSE)
+regionsJSON <- readOGR("./Spatial Layers/EPA_regions.geojson", "OGRGeoJSON", verbose = FALSE)
 regions <- map(regionsJSON, fill=TRUE, col="transparent", plot=FALSE)
 RegionsIDs <- sapply(strsplit(regions$names, ":"), function(x) x[1])
 regions_sp <- map2SpatialPolygons(regions, IDs=RegionsIDs,
@@ -109,7 +109,9 @@ ui <- fluidPage(
                                                                         checkboxInput(inputId = "checked", 
                                                                                       label = "Include contaminants that were screened but did not exceed criteria",
                                                                                       value = FALSE),
-                                                                        actionButton(inputId = "Click", label = "Screen Samples"))))),
+                                                                        actionButton(inputId = "Click", label = "Screen Samples"), 
+                                                                        downloadButton("downloadData", "Download"))))),
+                                     # , downloadButton("downloadData", "Download")
                                      tabPanel("Screen WQX Data",
                                               fluidRow(column(8,h3("Feature Coming Soon! Download WQX water quality historical data and screen it based on apppropriate criteria"),
                                                               wellPanel(dateRangeInput(inputId = "WQXDates", 
@@ -125,7 +127,7 @@ ui <- fluidPage(
                                                                                     selected = 1),
                                                                         selectInput(inputId = "selectunits", label = h4("Select Units"),
                                                                                     choices = list("mg/l", "ug/l")),
-                                                                        actionButton(inputId = "ClickWQX", label = "Download Data"))))),
+                                                                        actionButton(inputId = "ClickWQX", label = "Get Data"))))),
                                      tabPanel("Reload Prior Screen",
                                               fluidRow(column(8,h3("Reload input files from previous WQ Screen run"),fileInput(inputId = "Reload1", label = "Load Reload1_file.csv"),
                                                               fileInput(inputId = "Reload2", label = "Load Samplelatlondiferences.csv"),
@@ -939,9 +941,9 @@ server <- function(input, output, session) {
       
     })
     observeEvent(input$Demo, {
-      #Work_DemoDir <- "C:/Users/bavant/Dropbox/WQScreen/GKM Demo Files"
-      #home_demo <- "C:/Users/Brian/Dropbox/WQScreen/GKM Demo Files"
-      output_screen <- read.csv("C:/Users/bavant/Dropbox/WQScreen/GKM Demo Files/Reload1_file.csv",sep=",", 
+      # Work_DemoDir "C:/Users/bavant/Dropbox/WQScreen/wq_screen/GKM Demo Files"
+      # home_DemoDir "C:/Users/Brian/Dropbox/WQScreen/wq_screen/GKM Demo Files"
+      output_screen <- read.csv("C:/Users/Brian/Dropbox/WQScreen/wq_screen/GKM Demo Files/Reload1_file.csv",sep=",", 
                                 header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
       
       
@@ -949,7 +951,7 @@ server <- function(input, output, session) {
       output_screen$Times_Exceeded <- as.numeric(output_screen$Times_Exceeded)
       output_screen_Exceeded <- filter(output_screen, Times_Exceeded > 0)
       
-      samplemarkers_screen <- read.csv("C:/Users/bavant/Dropbox/WQScreen/GKM Demo Files/Samplelatlondiferences.csv",sep=",", 
+      samplemarkers_screen <- read.csv("C:/Users/Brian/Dropbox/WQScreen/wq_screen/GKM Demo Files/Samplelatlondiferences.csv",sep=",", 
                                        header = TRUE,na.strings = "NA",stringsAsFactors=FALSE)
       
       output$Results = renderDataTable({
