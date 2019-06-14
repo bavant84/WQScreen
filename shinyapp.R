@@ -18,8 +18,8 @@ library(xlsx);      library(readxl)
 ## The purpose of this tool is to screen GKM related datasets containing metals concentrations in the water column against water quality standards for specific areas.
 
 ## Read in screening critiera and sample data
-# setwd("C:/Users/bavant/Dropbox/WQScreen/wq_screen") #work /Git/WQScreen
-setwd("C:/Users/Brian/Dropbox/WQScreen/wq_screen") #laptop wd
+setwd("C:/Users/bavant/Dropbox/WQScreen/wq_screen") #work /Git/WQScreen
+# setwd("C:/Users/Brian/Dropbox/WQScreen/wq_screen") #laptop wd
 WQCritSS <- read_excel("WQ Criteria and Sample Templates.xlsx", sheet = "WQCriteriaTot")
 WQCritHardness <- read_excel("WQ Criteria and Sample Templates.xlsx", sheet = "WQCriteriawHardness")
 
